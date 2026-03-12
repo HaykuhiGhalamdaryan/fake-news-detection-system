@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+transformers
+torch
+sentence-transformers
+pydantic
+requests
+beautifulsoup4
+wikipedia
+scikit-learn
+matplotlib
+seaborn
