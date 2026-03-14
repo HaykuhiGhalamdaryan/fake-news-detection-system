@@ -1,48 +1,58 @@
 # decision_engine.py
 
-"""Hybrid verdict engine.
+"""Hybrid verdict engine — fact-check driven.
 
-The key insight driving this version:
-- The ML models (hamzab + jy46604790) produce LOW fake_scores (~0.15-0.35)
-  even for true statements — they are conservative by design.
-- Therefore we CANNOT use fake_score thresholds alone to decide verdicts.
-- Instead, net_support_score (fact evidence) is the PRIMARY driver for
-  TRUE/LIKELY_TRUE decisions.
-- fake_score is the PRIMARY driver for FAKE/LIKELY_FAKE decisions.
-- When both are weak → UNCERTAIN.
+Key insight from testing
+------------------------
+The ML models (hamzab + jy46604790) produce fake_score ~0.15-0.35 for
+almost ALL short neutral sentences regardless of truth value. This means
+fake_score alone cannot distinguish "Yerevan is the capital of Armenia"
+(true) from "Armenia is in South America" (false) — both score ~0.16.
 
-Verdict logic summary
----------------------
-  net_support HIGH + fake LOW  → True
-  net_support MED  + fake LOW  → Likely True
-  fake HIGH  + support LOW     → Fake
-  fake MED   + manipulation    → Likely Fake
-  otherwise                    → Uncertain
+Solution: use a TWO-TRACK decision system.
+
+Track A — FACT-CHECK TRACK (for verifiable factual claims)
+  Primary signal : net_support_score (support - contradiction)
+  Secondary signal: fake_score as a soft veto only
+  Triggered when : net_support_score is meaningful (> 0.15 either direction)
+
+Track B — ML TRACK (for opinion/manipulation/unverifiable claims)
+  Primary signal : fake_score + manipulation_score + rhetoric signals
+  Triggered when : fact-check finds no strong evidence (net_support near 0)
+
+Contradiction detection
+-----------------------
+net_support_score = support_score - contradiction_score
+  > +0.35  → evidence clearly supports the claim    → push toward True
+  < -0.05  → evidence contradicts the claim          → push toward Fake
+  near 0   → ambiguous (wrong entity, no evidence)  → rely on ML track
 """
 
 from __future__ import annotations
 
 
 class _T:
-    # fake_score bands — lowered because models are conservative
-    FAKE_HIGH        = 0.65
-    FAKE_MODERATE    = 0.45
-    FAKE_LOW         = 0.35
+    # --- Fact-check track thresholds ---
+    # net_support = support_score - contradiction_score
+    NET_TRUE         = 0.42   # strong support → True
+    NET_LIKELY_TRUE  = 0.22   # moderate support → Likely True
+    NET_CONTRADICTED = -0.03  # evidence contradicts → push toward Fake
+    NET_AMBIGUOUS_LO = -0.03
+    NET_AMBIGUOUS_HI = 0.22   # zone where we fall back to ML track
+    NET_STRONG       = 0.30
+    NET_MODERATE     = 0.15
 
-    # net_support_score bands (support - contradiction)
-    NET_STRONG       = 0.40
-    NET_MODERATE     = 0.20
-    NET_WEAK         = 0.05
+    # --- ML track thresholds (conservative — models score low) ---
+    FAKE_HIGH        = 0.62
+    FAKE_MODERATE    = 0.42
+    FAKE_LOW         = 0.32
 
-    # credibility
-    CRED_HIGH = 60
-    CRED_LOW  = 35
-
-    # manipulation
+    # --- Supporting signals ---
+    CRED_HIGH  = 60
+    CRED_LOW   = 35
     MANIP_HIGH     = 0.50
     MANIP_MODERATE = 0.20
 
-    # Rhetoric signal names (subset — not all text_feature signals)
     RHETORIC_SIGNALS = {
         "secret", "hidden truth", "they don't want you to know",
         "exposed", "shocking", "cover up", "government hiding",
@@ -61,83 +71,74 @@ def generate_hybrid_verdict(
     net_support_score: float | None = None,
     verdict_hint: str = "UNKNOWN",
 ) -> str:
-    # Use net_support if provided, fall back to raw support
-    net = net_support_score if net_support_score is not None else support_score
+    net = net_support_score if net_support_score is not None else (support_score - 0.3)
 
-    rhetoric_count = sum(
-        1 for p in detected_patterns if p in _T.RHETORIC_SIGNALS
-    )
+    rhetoric_count = sum(1 for p in detected_patterns if p in _T.RHETORIC_SIGNALS)
 
-    # ------------------------------------------------------------------
-    # Rule 0 — Explicitly CONTRADICTED by evidence + elevated fake score
-    # ------------------------------------------------------------------
-    if verdict_hint == "CONTRADICTED":
-        if fake_score >= _T.FAKE_MODERATE:
-            return "Fake"
-        return "Likely Fake"
+    # ==================================================================
+    # TRACK A — FACT-CHECK DRIVEN
+    # Applies when fact-check found meaningful evidence (positive or negative)
+    # ==================================================================
 
-    # ------------------------------------------------------------------
-    # Rule 1 — Strong evidence support + low fake score → True
-    # PRIMARY path for factual claims like "Yerevan is capital of Armenia"
-    # ------------------------------------------------------------------
-    if net >= _T.NET_STRONG and fake_score < _T.FAKE_LOW:
+    # A1 — Strong support + fake_score not alarming → True
+    if net >= _T.NET_TRUE and fake_score < _T.FAKE_MODERATE:
         return "True"
 
-    # ------------------------------------------------------------------
-    # Rule 2 — Strong evidence even with slightly higher fake score
-    # ------------------------------------------------------------------
-    if net >= _T.NET_STRONG and fake_score < _T.FAKE_MODERATE and credibility_score >= _T.CRED_HIGH:
+    # A2 — Strong support but fake_score somewhat elevated → Likely True
+    if net >= _T.NET_TRUE and fake_score < _T.FAKE_HIGH:
         return "Likely True"
 
-    # ------------------------------------------------------------------
-    # Rule 3 — Moderate evidence + good credibility + no manipulation
-    # ------------------------------------------------------------------
+    # A3 — Moderate support + good credibility + no heavy manipulation
     if (
-        net >= _T.NET_MODERATE
+        net >= _T.NET_LIKELY_TRUE
         and credibility_score >= _T.CRED_HIGH
         and fake_score < _T.FAKE_MODERATE
         and manipulation_score < _T.MANIP_HIGH
-        and verdict_hint != "CONTRADICTED"
     ):
         return "Likely True"
 
-    # ------------------------------------------------------------------
-    # Rule 4 — High fake probability + weak support → Fake
-    # ------------------------------------------------------------------
-    if fake_score >= _T.FAKE_HIGH and net < _T.NET_MODERATE:
+    # A4 — Evidence clearly contradicts the claim
+    if net <= _T.NET_CONTRADICTED and verdict_hint == "CONTRADICTED":
+        if fake_score >= _T.FAKE_LOW or manipulation_score >= _T.MANIP_MODERATE:
+            return "Likely Fake"
+        return "Uncertain"
+
+    # A5 — Hint says CONTRADICTED even without very negative net
+    if verdict_hint == "CONTRADICTED" and fake_score >= _T.FAKE_MODERATE:
+        return "Likely Fake"
+
+    # ==================================================================
+    # TRACK B — ML / MANIPULATION DRIVEN
+    # Applies when fact-check is ambiguous or found no strong evidence
+    # ==================================================================
+
+    # B1 — High fake probability + weak fact support → Fake
+    if fake_score >= _T.FAKE_HIGH and net < _T.NET_LIKELY_TRUE:
         return "Fake"
 
-    # ------------------------------------------------------------------
-    # Rule 5 — Moderate fake + high manipulation + weak support → Likely Fake
-    # ------------------------------------------------------------------
+    # B2 — Moderate fake + high manipulation + weak support
     if (
         fake_score >= _T.FAKE_MODERATE
         and manipulation_score >= _T.MANIP_MODERATE
-        and net < _T.NET_MODERATE
+        and net < _T.NET_LIKELY_TRUE
     ):
         return "Likely Fake"
 
-    # ------------------------------------------------------------------
-    # Rule 6 — Moderate fake + rhetoric signals → Likely Fake
-    # ------------------------------------------------------------------
+    # B3 — Moderate fake + rhetoric signals (conspiracy language)
     if fake_score >= _T.FAKE_MODERATE and rhetoric_count >= 1:
         return "Likely Fake"
 
-    # ------------------------------------------------------------------
-    # Rule 7 — Moderate fake + low credibility → Likely Fake
-    # ------------------------------------------------------------------
+    # B4 — Low credibility + moderate fake
     if fake_score >= _T.FAKE_MODERATE and credibility_score < _T.CRED_LOW:
         return "Likely Fake"
 
-    # ------------------------------------------------------------------
-    # Rule 8 — Supported hint + any credibility → Likely True
-    # ------------------------------------------------------------------
-    if verdict_hint == "SUPPORTED" and fake_score < _T.FAKE_MODERATE:
-        return "Likely True"
+    # B5 — Manipulation language present even with moderate fake score
+    if manipulation_score >= _T.MANIP_HIGH and fake_score >= _T.FAKE_LOW:
+        return "Likely Fake"
 
-    # ------------------------------------------------------------------
-    # Default
-    # ------------------------------------------------------------------
+    # ==================================================================
+    # DEFAULT — not enough signal to decide confidently
+    # ==================================================================
     return "Uncertain"
 
 

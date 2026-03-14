@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TruthLens — Fake News Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Variables ─────────────────────────────────────────────────── */
+:root {
+  --bg:        #F7F5F0;
+  --surface:   #FFFFFF;
+  --border:    #E2DDD6;
+  --text:      #1A1714;
+  --text-2:    #6B6560;
+  --text-3:    #9C9590;
+  --accent:    #1A4D8F;
+  --accent-2:  #2563C4;
+  --accent-bg: #EEF3FB;
+  --true:      #166534;
+  --true-bg:   #DCFCE7;
+  --likely-true: #14532D;
+  --likely-true-bg: #D1FAE5;
+  --uncertain: #92400E;
+  --uncertain-bg: #FEF3C7;
+  --likely-fake: #991B1B;
+  --likely-fake-bg: #FEE2E2;
+  --fake:      #7F1D1D;
+  --fake-bg:   #FEE2E2;
+  --shadow:    0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.10);
+  --radius:    12px;
+  --ff-display: 'Playfair Display', Georgia, serif;
+  --ff-body:    'DM Sans', sans-serif;
+  --ff-mono:    'DM Mono', monospace;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--ff-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+img { display: block; max-width: 100%; }
+button { cursor: pointer; font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ── Layout ─────────────────────────────────────────────────────── */
+.shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── Header ─────────────────────────────────────────────────────── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.header-inner {
+  max-width: 1140px; margin: 0 auto;
+  padding: 0 24px;
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--ff-display);
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+}
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px;
+}
+nav { display: flex; gap: 4px; }
+.nav-btn {
+  background: none; border: none;
+  padding: 7px 14px; border-radius: 8px;
+  font-size: .875rem; font-weight: 500;
+  color: var(--text-2);
+  transition: background .15s, color .15s;
+}
+.nav-btn:hover { background: var(--bg); color: var(--text); }
+.nav-btn.active { background: var(--accent-bg); color: var(--accent); }
+
+/* ── Pages ─────────────────────────────────────────────────────── */
+.page { display: none; flex: 1; }
+.page.active { display: block; }
+.container { max-width: 1140px; margin: 0 auto; padding: 40px 24px; }
+
+/* ── Page headings ─────────────────────────────────────────────── */
+.page-header { margin-bottom: 32px; }
+.page-header h1 {
+  font-family: var(--ff-display);
+  font-size: 2rem; font-weight: 700;
+  letter-spacing: -.02em; line-height: 1.2;
+  color: var(--text);
+}
+.page-header p { color: var(--text-2); margin-top: 6px; font-size: .95rem; }
+
+/* ── Cards ─────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-body { padding: 24px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE 1 — ANALYZER
+═══════════════════════════════════════════════════════════════ */
+.analyzer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 800px) { .analyzer-grid { grid-template-columns: 1fr; } }
+
+/* Input panel */
+.textarea-wrap { position: relative; }
+#claim-input {
+  width: 100%; min-height: 200px;
+  padding: 16px; padding-bottom: 52px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--ff-body); font-size: .95rem;
+  color: var(--text); background: var(--surface);
+  resize: vertical;
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+}
+#claim-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(26,77,143,.1);
+}
+#claim-input::placeholder { color: var(--text-3); }
+.textarea-footer {
+  position: absolute; bottom: 12px; left: 12px; right: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.char-count { font-size: .78rem; color: var(--text-3); font-family: var(--ff-mono); }
+.analyze-btn {
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 9px 20px; font-size: .875rem; font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  box-shadow: 0 2px 8px rgba(26,77,143,.25);
+}
+.analyze-btn:hover { background: var(--accent-2); box-shadow: 0 4px 16px rgba(26,77,143,.3); }
+.analyze-btn:active { transform: scale(.98); }
+.analyze-btn:disabled { opacity: .55; cursor: not-allowed; }
+.analyze-btn .spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+.analyze-btn.loading .spinner { display: block; }
+.analyze-btn.loading .btn-text { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Example pills */
+.examples { margin-top: 14px; }
+.examples-label { font-size: .78rem; color: var(--text-3); font-weight: 500; margin-bottom: 8px; letter-spacing: .04em; text-transform: uppercase; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: .8rem; color: var(--text-2); cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.pill:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+
+/* Result panel */
+.result-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center;
+  padding: 48px 24px;
+  color: var(--text-3);
+}
+.result-empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: .4; }
+.result-empty p { font-size: .9rem; }
+
+/* Verdict badge */
+.verdict-section {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.verdict-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 100px;
+  font-weight: 700; font-size: 1rem; letter-spacing: .01em;
+}
+.verdict-badge.true    { background: var(--true-bg);    color: var(--true); }
+.verdict-badge.likely-true { background: var(--likely-true-bg); color: var(--likely-true); }
+.verdict-badge.uncertain { background: var(--uncertain-bg); color: var(--uncertain); }
+.verdict-badge.likely-fake { background: var(--likely-fake-bg); color: var(--likely-fake); }
+.verdict-badge.fake    { background: var(--fake-bg);    color: var(--fake); }
+
+.confidence-bar-wrap { text-align: right; }
+.confidence-label { font-size: .75rem; color: var(--text-3); font-weight: 500; margin-bottom: 4px; }
+.confidence-bar {
+  width: 120px; height: 6px; background: var(--border);
+  border-radius: 3px; overflow: hidden;
+}
+.confidence-fill {
+  height: 100%; border-radius: 3px;
+  background: var(--accent);
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+
+/* Score grid */
+.scores-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0; border-bottom: 1px solid var(--border);
+}
+.score-cell {
+  padding: 16px 20px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.score-cell:last-child { border-right: none; }
+.score-value {
+  font-family: var(--ff-display);
+  font-size: 1.6rem; font-weight: 700; line-height: 1;
+  color: var(--text);
+}
+.score-label { font-size: .72rem; color: var(--text-3); margin-top: 4px; text-transform: uppercase; letter-spacing: .06em; font-weight: 500; }
+
+/* Sections inside result */
+.result-section { padding: 16px 24px; border-bottom: 1px solid var(--border); }
+.result-section:last-child { border-bottom: none; }
+.section-title {
+  font-size: .72rem; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-3);
+  margin-bottom: 10px;
+}
+.explanation-primary {
+  font-size: .9rem; color: var(--text); font-weight: 500; margin-bottom: 6px;
+}
+.explanation-supporting { font-size: .85rem; color: var(--text-2); }
+
+/* Signals */
+.signals-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.signal-tag {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 3px 9px;
+  font-size: .78rem; font-family: var(--ff-mono);
+  color: var(--text-2);
+}
+.signal-tag.danger { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
+
+/* Evidence */
+.evidence-box {
+  background: var(--accent-bg); border: 1px solid #C7D9F5;
+  border-radius: 8px; padding: 12px 14px;
+  font-size: .85rem; color: var(--text); line-height: 1.6;
+  border-left: 3px solid var(--accent);
+}
+.evidence-source { font-size: .75rem; color: var(--text-3); margin-top: 6px; font-family: var(--ff-mono); }
+
+/* Risk badge */
+.risk-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 6px; font-size: .8rem; font-weight: 600;
+}
+.risk-badge.LOW    { background: #DCFCE7; color: #166534; }
+.risk-badge.MEDIUM { background: #FEF3C7; color: #92400E; }
+.risk-badge.HIGH   { background: #FEE2E2; color: #991B1B; }
+
+/* Sentiment */
+.sentiment-row { display: flex; align-items: center; gap: 10px; }
+.sentiment-pill {
+  padding: 3px 10px; border-radius: 20px; font-size: .8rem; font-weight: 600;
+}
+.sentiment-pill.POSITIVE { background: #DCFCE7; color: #166534; }
+.sentiment-pill.NEGATIVE { background: #FEE2E2; color: #991B1B; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE 2 — HISTORY
+═══════════════════════════════════════════════════════════════ */
+.history-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+}
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 14px;
+  font-size: .825rem; font-weight: 500; color: var(--text-2);
+  transition: all .15s;
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.refresh-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 14px;
+  font-size: .825rem; font-weight: 500; color: var(--text-2);
+  transition: all .15s; display: flex; align-items: center; gap: 6px;
+}
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.history-list { display: flex; flex-direction: column; gap: 12px; }
+.history-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  overflow: hidden; transition: box-shadow .15s;
+}
+.history-item:hover { box-shadow: var(--shadow-lg); }
+.history-item-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: border-color .15s;
+}
+.history-item.expanded .history-item-header { border-bottom-color: var(--border); }
+.history-item-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.history-text { font-size: .9rem; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 480px; }
+.history-date { font-size: .75rem; color: var(--text-3); font-family: var(--ff-mono); white-space: nowrap; }
+.history-right { display: flex; align-items: center; gap: 10px; }
+.expand-icon { color: var(--text-3); font-size: .85rem; transition: transform .2s; }
+.history-item.expanded .expand-icon { transform: rotate(180deg); }
+.history-detail {
+  padding: 16px 20px; display: none;
+  grid-template-columns: repeat(3,1fr); gap: 12px;
+}
+.history-item.expanded .history-detail { display: grid; }
+.detail-label { font-size: .72rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; font-weight: 500; margin-bottom: 4px; }
+.detail-value { font-size: .9rem; font-weight: 500; color: var(--text); }
+.delete-btn {
+  background: none; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 8px;
+  font-size: .75rem; color: var(--text-3);
+  transition: all .15s;
+}
+.delete-btn:hover { border-color: #FECACA; color: #DC2626; background: #FEF2F2; }
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; }
+.page-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 14px; font-size: .85rem;
+  color: var(--text-2); transition: all .15s;
+}
+.page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.page-info { font-size: .85rem; color: var(--text-3); padding: 0 8px; }
+
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--text-3);
+}
+.empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: .3; }
+.empty-state p { font-size: .9rem; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE 3 — ANALYTICS
+═══════════════════════════════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 24px;
+}
+@media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr; } }
+
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
+  box-shadow: var(--shadow);
+}
+.stat-icon { font-size: 1.4rem; margin-bottom: 10px; }
+.stat-value {
+  font-family: var(--ff-display); font-size: 2.2rem; font-weight: 700;
+  line-height: 1; color: var(--text); margin-bottom: 4px;
+}
+.stat-label { font-size: .8rem; color: var(--text-3); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+.stat-sub { font-size: .8rem; color: var(--text-2); margin-top: 6px; }
+
+.analytics-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+@media (max-width: 700px) { .analytics-grid { grid-template-columns: 1fr; } }
+
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
+  box-shadow: var(--shadow);
+}
+.chart-title { font-size: .85rem; font-weight: 600; color: var(--text-2); margin-bottom: 16px; text-transform: uppercase; letter-spacing: .06em; }
+
+/* Bar chart */
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: flex; align-items: center; gap: 12px; }
+.bar-label { font-size: .8rem; color: var(--text-2); width: 90px; text-align: right; flex-shrink: 0; }
+.bar-track { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+.bar-count { font-size: .8rem; color: var(--text-3); width: 36px; text-align: right; flex-shrink: 0; font-family: var(--ff-mono); }
+
+/* Donut chart */
+.donut-wrap { display: flex; align-items: center; gap: 24px; }
+.donut-svg { flex-shrink: 0; }
+.donut-legend { display: flex; flex-direction: column; gap: 8px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--text-2); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* Metric rows */
+.metric-list { display: flex; flex-direction: column; gap: 12px; }
+.metric-row { display: flex; align-items: center; justify-content: space-between; }
+.metric-name { font-size: .875rem; color: var(--text-2); }
+.metric-value { font-size: .875rem; font-weight: 600; color: var(--text); font-family: var(--ff-mono); }
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE 4 — ABOUT
+═══════════════════════════════════════════════════════════════ */
+.about-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; align-items: start; }
+@media (max-width: 800px) { .about-grid { grid-template-columns: 1fr; } }
+
+.prose h2 {
+  font-family: var(--ff-display); font-size: 1.35rem; font-weight: 700;
+  color: var(--text); margin: 28px 0 10px; letter-spacing: -.01em;
+}
+.prose h2:first-child { margin-top: 0; }
+.prose p { color: var(--text-2); font-size: .925rem; line-height: 1.7; margin-bottom: 10px; }
+
+.pipeline-steps { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+.step {
+  display: flex; gap: 16px; padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.step:last-child { border-bottom: none; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.step-content h3 { font-size: .9rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.step-content p { font-size: .83rem; color: var(--text-2); line-height: 1.5; }
+
+.tech-stack { display: flex; flex-direction: column; gap: 8px; }
+.tech-item {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.tech-icon { font-size: 1.1rem; }
+.tech-name { font-size: .85rem; font-weight: 600; color: var(--text); }
+.tech-desc { font-size: .78rem; color: var(--text-3); }
+
+.verdict-guide { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.vg-row { display: flex; align-items: center; gap: 10px; }
+.vg-label {
+  padding: 3px 10px; border-radius: 20px; font-size: .78rem; font-weight: 600; min-width: 90px; text-align: center;
+}
+.vg-desc { font-size: .82rem; color: var(--text-2); }
+
+/* ── Toast ─────────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--text); color: #fff;
+  border-radius: 10px; padding: 12px 18px;
+  font-size: .875rem; font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(80px); opacity: 0;
+  transition: transform .3s, opacity .3s;
+  z-index: 999;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── Loading overlay ───────────────────────────────────────────── */
+.loading-overlay {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 48px;
+  color: var(--text-3);
+}
+.big-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin-bottom: 14px;
+}
+
+/* ── Utility ───────────────────────────────────────────────────── */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.mt-4 { margin-top: 16px; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <div class="logo" onclick="navigate('analyzer')">
+      <div class="logo-icon">🔍</div>
+      TruthLens
+    </div>
+    <nav>
+      <button class="nav-btn active" data-page="analyzer" onclick="navigate('analyzer')">Analyzer</button>
+      <button class="nav-btn" data-page="history"  onclick="navigate('history')">History</button>
+      <button class="nav-btn" data-page="analytics" onclick="navigate('analytics')">Analytics</button>
+      <button class="nav-btn" data-page="about"    onclick="navigate('about')">About</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE 1 — ANALYZER
+═══════════════════════════════════════════════════════════════ -->
+<main class="page active" id="page-analyzer">
+  <div class="container">
+    <div class="page-header">
+      <h1>Analyze a Claim</h1>
+      <p>Paste any news headline, article, or claim to check its credibility.</p>
+    </div>
+    <div class="analyzer-grid">
+
+      <!-- Input -->
+      <div class="input-panel">
+        <div class="textarea-wrap">
+          <textarea id="claim-input" placeholder="Paste a news headline, article excerpt, or any claim here…" oninput="updateCharCount()"></textarea>
+          <div class="textarea-footer">
+            <span class="char-count" id="char-count">0 chars</span>
+            <button class="analyze-btn" id="analyze-btn" onclick="analyzeText()">
+              <div class="spinner"></div>
+              <span class="btn-text">Analyze →</span>
+            </button>
+          </div>
+        </div>
+        <div class="examples mt-4">
+          <div class="examples-label">Try an example</div>
+          <div class="pills">
+            <div class="pill" onclick="setExample(this)">Yerevan is the capital of Armenia.</div>
+            <div class="pill" onclick="setExample(this)">Armenia is located in South America.</div>
+            <div class="pill" onclick="setExample(this)">Scientists discover cure for all cancers!</div>
+            <div class="pill" onclick="setExample(this)">The government is hiding the truth about vaccines!</div>
+            <div class="pill" onclick="setExample(this)">The Earth orbits the Sun.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="card" id="result-card">
+        <div class="result-empty" id="result-empty">
+          <div class="result-empty-icon">📋</div>
+          <p>Your analysis results will appear here.</p>
+        </div>
+        <div id="result-content" style="display:none"></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE 2 — HISTORY
+═══════════════════════════════════════════════════════════════ -->
+<main class="page" id="page-history">
+  <div class="container">
+    <div class="page-header">
+      <h1>Analysis History</h1>
+      <p>Browse all previously analyzed claims.</p>
+    </div>
+    <div class="history-toolbar">
+      <div class="filter-row" id="filter-row">
+        <button class="filter-btn active" onclick="filterHistory(null, this)">All</button>
+        <button class="filter-btn" onclick="filterHistory('True', this)">True</button>
+        <button class="filter-btn" onclick="filterHistory('Likely True', this)">Likely True</button>
+        <button class="filter-btn" onclick="filterHistory('Uncertain', this)">Uncertain</button>
+        <button class="filter-btn" onclick="filterHistory('Likely Fake', this)">Likely Fake</button>
+        <button class="filter-btn" onclick="filterHistory('Fake', this)">Fake</button>
+      </div>
+      <button class="refresh-btn" onclick="loadHistory()">↻ Refresh</button>
+    </div>
+    <div id="history-list" class="history-list"></div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE 3 — ANALYTICS
+═══════════════════════════════════════════════════════════════ -->
+<main class="page" id="page-analytics">
+  <div class="container">
+    <div class="page-header">
+      <div class="flex-between">
+        <div>
+          <h1>Analytics</h1>
+          <p>Aggregate statistics from all analyzed claims.</p>
+        </div>
+        <button class="refresh-btn" onclick="loadAnalytics()">↻ Refresh</button>
+      </div>
+    </div>
+    <div id="analytics-content">
+      <div class="loading-overlay"><div class="big-spinner"></div><span>Loading analytics…</span></div>
+    </div>
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE 4 — ABOUT
+═══════════════════════════════════════════════════════════════ -->
+<main class="page" id="page-about">
+  <div class="container">
+    <div class="page-header">
+      <h1>About TruthLens</h1>
+      <p>A multi-signal fake news detection system built for academic research.</p>
+    </div>
+    <div class="about-grid">
+      <div>
+        <div class="card card-body prose">
+          <h2>What is TruthLens?</h2>
+          <p>TruthLens is a fake news detection system that combines machine learning models, semantic fact-checking, and linguistic analysis to assess the credibility of news claims and articles.</p>
+          <p>Built as a Bachelor's thesis project, it uses an ensemble of two fine-tuned RoBERTa models alongside Wikipedia, NewsAPI, and DuckDuckGo for multi-source evidence retrieval.</p>
+
+          <h2>How It Works</h2>
+          <div class="pipeline-steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h3>Text Chunking</h3>
+                <p>Long articles are split into overlapping 300-word chunks so no content is silently truncated by the model's 512-token limit.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h3>ML Ensemble Scoring</h3>
+                <p>Two fine-tuned RoBERTa models (hamzab + jy46604790) score each chunk independently. Scores are aggregated with position and confidence weighting.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h3>Text Feature Analysis</h3>
+                <p>8 surface-level signals are detected: ALL CAPS, excessive punctuation, clickbait phrases, hyperbolic language, vague attribution, and more.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <h3>Multi-Source Fact Checking</h3>
+                <p>Wikipedia, NewsAPI, and DuckDuckGo are queried in parallel. Sentence Transformers compute semantic similarity between the claim and found evidence.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">5</div>
+              <div class="step-content">
+                <h3>Contradiction Detection</h3>
+                <p>The claim's negation is also scored against the evidence. Geographic mismatch penalties catch wrong-entity matches (e.g., "Armenia" city vs. country).</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">6</div>
+              <div class="step-content">
+                <h3>Hybrid Verdict</h3>
+                <p>A two-track decision engine combines all signals: fact-check driven for verifiable claims, ML-driven for opinion and manipulation detection.</p>
+              </div>
+            </div>
+          </div>
+
+          <h2>Verdict Scale</h2>
+          <div class="verdict-guide">
+            <div class="vg-row"><span class="vg-label verdict-badge true" style="padding:3px 10px;font-size:.78rem">True</span><span class="vg-desc">Strong fact support + low fake probability</span></div>
+            <div class="vg-row"><span class="vg-label verdict-badge likely-true" style="padding:3px 10px;font-size:.78rem">Likely True</span><span class="vg-desc">Moderate evidence of truth</span></div>
+            <div class="vg-row"><span class="vg-label verdict-badge uncertain" style="padding:3px 10px;font-size:.78rem">Uncertain</span><span class="vg-desc">Conflicting or insufficient signals</span></div>
+            <div class="vg-row"><span class="vg-label verdict-badge likely-fake" style="padding:3px 10px;font-size:.78rem">Likely Fake</span><span class="vg-desc">Elevated fake probability + manipulation signals</span></div>
+            <div class="vg-row"><span class="vg-label verdict-badge fake" style="padding:3px 10px;font-size:.78rem">Fake</span><span class="vg-desc">High fake probability + weak/contradicting evidence</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card card-body">
+          <div class="chart-title">Tech Stack</div>
+          <div class="tech-stack">
+            <div class="tech-item"><span class="tech-icon">⚡</span><div><div class="tech-name">FastAPI</div><div class="tech-desc">Python REST API backend</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🤖</span><div><div class="tech-name">Transformers</div><div class="tech-desc">RoBERTa fake-news models</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🔍</span><div><div class="tech-name">Sentence Transformers</div><div class="tech-desc">Semantic similarity scoring</div></div></div>
+            <div class="tech-item"><span class="tech-icon">📰</span><div><div class="tech-name">NewsAPI + Wikipedia</div><div class="tech-desc">Multi-source fact checking</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🗄️</span><div><div class="tech-name">PostgreSQL</div><div class="tech-desc">Analysis result storage</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🎨</span><div><div class="tech-name">HTML / CSS / JS</div><div class="tech-desc">Vanilla frontend (this page)</div></div></div>
+          </div>
+        </div>
+
+        <div class="card card-body">
+          <div class="chart-title">Limitations</div>
+          <div class="prose">
+            <p>• Models are English-only</p>
+            <p>• Short claims may score conservatively</p>
+            <p>• Satire is difficult to detect reliably</p>
+            <p>• Very recent events may lack Wikipedia coverage</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+</div><!-- .shell -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+
+/* ── Navigation ───────────────────────────────────────────────── */
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  if (page === 'history')   loadHistory();
+  if (page === 'analytics') loadAnalytics();
+}
+
+/* ── Toast ────────────────────────────────────────────────────── */
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.innerHTML = (isError ? '⚠️ ' : '✓ ') + msg;
+  t.style.background = isError ? '#991B1B' : '#1A1714';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ── Analyzer ─────────────────────────────────────────────────── */
+function updateCharCount() {
+  const v = document.getElementById('claim-input').value;
+  document.getElementById('char-count').textContent = v.length + ' chars';
+}
+
+function setExample(el) {
+  document.getElementById('claim-input').value = el.textContent;
+  updateCharCount();
+  document.getElementById('claim-input').focus();
+}
+
+function verdictClass(v) {
+  if (!v) return 'uncertain';
+  const vl = v.toLowerCase().replace(/ /g,'-');
+  return ['true','likely-true','uncertain','likely-fake','fake'].includes(vl) ? vl : 'uncertain';
+}
+
+function verdictEmoji(v) {
+  const map = { 'True':'✅', 'Likely True':'🟢', 'Uncertain':'🟡', 'Likely Fake':'🟠', 'Fake':'🔴' };
+  return map[v] || '⚪';
+}
+
+async function analyzeText() {
+  const text = document.getElementById('claim-input').value.trim();
+  if (!text) { showToast('Please enter some text first.', true); return; }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.classList.add('loading'); btn.disabled = true;
+  document.getElementById('result-empty').style.display = 'none';
+  document.getElementById('result-content').style.display = 'none';
+  document.getElementById('result-content').innerHTML =
+    '<div class="loading-overlay"><div class="big-spinner"></div><span>Analyzing…</span></div>';
+  document.getElementById('result-content').style.display = 'block';
+
+  try {
+    const res = await fetch(API + '/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const d = await res.json();
+    renderResult(d);
+  } catch (e) {
+    showToast('Could not connect to API. Is the server running?', true);
+    document.getElementById('result-content').style.display = 'none';
+    document.getElementById('result-empty').style.display = 'flex';
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+
+function renderResult(d) {
+  const vc = verdictClass(d.verdict);
+  const signals = d.signals || [];
+  const dangerSignals = ['HIGH_FAKE_PROBABILITY','FACT_CONTRADICTION','MANIPULATIVE_LANGUAGE',
+    'CLICKBAIT_LANGUAGE','HYPERBOLIC_LANGUAGE','VAGUE_ATTRIBUTION','EXCESSIVE_PUNCTUATION'];
+
+  const signalsHTML = signals.length
+    ? signals.map(s => `<span class="signal-tag ${dangerSignals.includes(s)?'danger':''}">${s}</span>`).join('')
+    : '<span style="color:var(--text-3);font-size:.85rem">No signals detected</span>';
+
+  const evidenceHTML = d.fact_check?.evidence?.[0]
+    ? `<div class="evidence-box">
+         ${escHtml(d.fact_check.evidence[0])}
+         <div class="evidence-source">Sources: ${(d.fact_check.sources||[]).join(', ') || 'N/A'} &nbsp;·&nbsp; Support: ${(d.fact_check.support_score*100).toFixed(0)}%</div>
+       </div>`
+    : '<span style="color:var(--text-3);font-size:.85rem">No evidence found</span>';
+
+  document.getElementById('result-content').innerHTML = `
+    <div class="verdict-section">
+      <div class="verdict-badge ${vc}">${verdictEmoji(d.verdict)} ${d.verdict}</div>
+      <div class="confidence-bar-wrap">
+        <div class="confidence-label">Fake probability</div>
+        <div class="confidence-bar">
+          <div class="confidence-fill" style="width:${(d.analysis?.fake_probability||0)*100}%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="scores-grid">
+      <div class="score-cell">
+        <div class="score-value">${d.credibility_score}</div>
+        <div class="score-label">Credibility</div>
+      </div>
+      <div class="score-cell">
+        <div class="score-value">${d.confidence}%</div>
+        <div class="score-label">Confidence</div>
+      </div>
+      <div class="score-cell">
+        <div class="score-value"><span class="risk-badge ${d.risk_level}">${d.risk_level}</span></div>
+        <div class="score-label">Risk</div>
+      </div>
+    </div>
+    <div class="result-section">
+      <div class="section-title">Explanation</div>
+      <div class="explanation-primary">${escHtml(d.explanation?.primary_reason || '')}</div>
+      ${(d.explanation?.supporting_reasons||[]).map(r=>`<div class="explanation-supporting">• ${escHtml(r)}</div>`).join('')}
+    </div>
+    <div class="result-section">
+      <div class="section-title">Signals</div>
+      <div class="signals-list">${signalsHTML}</div>
+    </div>
+    <div class="result-section">
+      <div class="section-title">Best Evidence Found</div>
+      ${evidenceHTML}
+    </div>
+    <div class="result-section">
+      <div class="section-title">Sentiment</div>
+      <div class="sentiment-row">
+        <span class="sentiment-pill ${d.analysis?.sentiment}">${d.analysis?.sentiment}</span>
+        <span style="font-size:.82rem;color:var(--text-3)">${d.llm_analysis?.tone === 'emotional' ? '⚠️ Emotional tone detected' : 'Neutral tone'}</span>
+      </div>
+    </div>
+    ${d.llm_analysis?.detected_patterns?.length ? `
+    <div class="result-section">
+      <div class="section-title">Detected Patterns</div>
+      <div class="signals-list">${d.llm_analysis.detected_patterns.map(p=>`<span class="signal-tag danger">${escHtml(p)}</span>`).join('')}</div>
+    </div>` : ''}
+  `;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── History ──────────────────────────────────────────────────── */
+let historyFilter = null;
+let historyPage   = 0;
+const HISTORY_LIMIT = 10;
+
+function filterHistory(verdict, btn) {
+  historyFilter = verdict;
+  historyPage   = 0;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadHistory();
+}
+
+async function loadHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = '<div class="loading-overlay"><div class="big-spinner"></div><span>Loading…</span></div>';
+  try {
+    let url = `${API}/history?skip=${historyPage * HISTORY_LIMIT}&limit=${HISTORY_LIMIT}`;
+    if (historyFilter) url += `&verdict=${encodeURIComponent(historyFilter)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    const items = await res.json();
+    renderHistory(items);
+  } catch {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Could not load history. Is the API running?</p></div>';
+  }
+}
+
+function renderHistory(items) {
+  const list = document.getElementById('history-list');
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No analyses found.</p></div>';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+  list.innerHTML = items.map(item => `
+    <div class="history-item" id="hi-${item.id}">
+      <div class="history-item-header" onclick="toggleHistoryItem(${item.id})">
+        <div class="history-item-left">
+          <span class="verdict-badge ${verdictClass(item.verdict)}" style="font-size:.78rem;padding:4px 10px;white-space:nowrap">${verdictEmoji(item.verdict)} ${item.verdict}</span>
+          <span class="history-text" title="${escHtml(item.text)}">${escHtml(item.text)}</span>
+        </div>
+        <div class="history-right">
+          <span class="history-date">${formatDate(item.created_at)}</span>
+          <button class="delete-btn" onclick="deleteHistory(event,${item.id})">✕</button>
+          <span class="expand-icon">▾</span>
+        </div>
+      </div>
+      <div class="history-detail">
+        <div class="detail-cell"><div class="detail-label">Credibility</div><div class="detail-value">${item.credibility_score}/100</div></div>
+        <div class="detail-cell"><div class="detail-label">Fake Probability</div><div class="detail-value">${(item.fake_probability*100).toFixed(1)}%</div></div>
+        <div class="detail-cell"><div class="detail-label">Risk Level</div><div class="detail-value"><span class="risk-badge ${item.risk_level}">${item.risk_level}</span></div></div>
+        <div class="detail-cell"><div class="detail-label">Sentiment</div><div class="detail-value"><span class="sentiment-pill ${item.sentiment}" style="font-size:.78rem">${item.sentiment}</span></div></div>
+        <div class="detail-cell"><div class="detail-label">Risk Score</div><div class="detail-value">${item.risk_score}/100</div></div>
+        <div class="detail-cell"><div class="detail-label">Confidence</div><div class="detail-value">${Math.round(item.fake_probability*100)}%</div></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Pagination
+  const pg = document.getElementById('pagination');
+  pg.innerHTML = `
+    <button class="page-btn" onclick="prevPage()" ${historyPage===0?'disabled':''}>← Prev</button>
+    <span class="page-info">Page ${historyPage+1}</span>
+    <button class="page-btn" onclick="nextPage()" ${items.length<HISTORY_LIMIT?'disabled':''}>Next →</button>
+  `;
+}
+
+function toggleHistoryItem(id) {
+  document.getElementById('hi-' + id).classList.toggle('expanded');
+}
+
+async function deleteHistory(e, id) {
+  e.stopPropagation();
+  if (!confirm('Delete this analysis?')) return;
+  try {
+    await fetch(`${API}/history/${id}`, { method: 'DELETE' });
+    showToast('Analysis deleted.');
+    loadHistory();
+  } catch { showToast('Delete failed.', true); }
+}
+
+function prevPage() { if (historyPage > 0) { historyPage--; loadHistory(); } }
+function nextPage() { historyPage++; loadHistory(); }
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+    + ' ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+}
+
+/* ── Analytics ────────────────────────────────────────────────── */
+async function loadAnalytics() {
+  document.getElementById('analytics-content').innerHTML =
+    '<div class="loading-overlay"><div class="big-spinner"></div><span>Loading analytics…</span></div>';
+  try {
+    const res = await fetch(API + '/analytics');
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    renderAnalytics(d);
+  } catch {
+    document.getElementById('analytics-content').innerHTML =
+      '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Could not load analytics. Is the API running?</p></div>';
+  }
+}
+
+function renderAnalytics(d) {
+  const total = d.total_analyses || 1;
+  const fakeRate = total ? ((d.fake_count/total)*100).toFixed(1) : 0;
+  const realRate = total ? ((d.real_count/total)*100).toFixed(1) : 0;
+
+  // Donut segments
+  const donutData = [
+    { label:'Fake',    val: d.fake_count||0,   color:'#DC2626' },
+    { label:'Real',    val: d.real_count||0,   color:'#16A34A' },
+    { label:'Other',   val: Math.max(0,(d.total_analyses||0)-((d.fake_count||0)+(d.real_count||0))), color:'#D97706' },
+  ];
+
+  document.getElementById('analytics-content').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value">${d.total_analyses||0}</div>
+        <div class="stat-label">Total Analyses</div>
+        <div class="stat-sub">+${d.analyses_today||0} today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-value">${d.fake_count||0}</div>
+        <div class="stat-label">Fake Detected</div>
+        <div class="stat-sub">${fakeRate}% of total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">${d.real_count||0}</div>
+        <div class="stat-label">Real Verified</div>
+        <div class="stat-sub">${realRate}% of total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-value">${d.high_risk||0}</div>
+        <div class="stat-label">High Risk</div>
+        <div class="stat-sub">${d.medium_risk||0} medium, ${d.low_risk||0} low</div>
+      </div>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="chart-card">
+        <div class="chart-title">Verdict Distribution</div>
+        <div class="donut-wrap">
+          <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+            ${buildDonut(donutData)}
+          </svg>
+          <div class="donut-legend">
+            ${donutData.map(item=>`
+              <div class="legend-item">
+                <span class="legend-dot" style="background:${item.color}"></span>
+                ${item.label}: <strong>${item.val}</strong>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Risk Distribution</div>
+        <div class="bar-chart">
+          ${buildBar('HIGH',   d.high_risk||0,   total, '#DC2626')}
+          ${buildBar('MEDIUM', d.medium_risk||0, total, '#D97706')}
+          ${buildBar('LOW',    d.low_risk||0,    total, '#16A34A')}
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Average Scores</div>
+        <div class="metric-list">
+          <div class="metric-row"><span class="metric-name">Avg. Credibility Score</span><span class="metric-value">${d.average_credibility||0}/100</span></div>
+          <div class="metric-row"><span class="metric-name">Avg. Fake Probability</span><span class="metric-value">${((d.average_fake_probability||0)*100).toFixed(1)}%</span></div>
+          <div class="metric-row"><span class="metric-name">Avg. Risk Score</span><span class="metric-value">${d.average_risk_score||0}/100</span></div>
+          <div class="metric-row"><span class="metric-name">Analyses Today</span><span class="metric-value">${d.analyses_today||0}</span></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Risk Breakdown</div>
+        <div class="bar-chart">
+          ${buildBar('High Risk',   d.high_risk||0,   total, '#DC2626')}
+          ${buildBar('Medium Risk', d.medium_risk||0, total, '#D97706')}
+          ${buildBar('Low Risk',    d.low_risk||0,    total, '#16A34A')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function buildBar(label, val, total, color) {
+  const pct = total ? Math.round((val/total)*100) : 0;
+  return `
+    <div class="bar-row">
+      <span class="bar-label">${label}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="bar-count">${val}</span>
+    </div>`;
+}
+
+function buildDonut(data) {
+  const total = data.reduce((s,d)=>s+d.val,0) || 1;
+  const r = 40, cx = 55, cy = 55;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  let paths = '';
+  for (const item of data) {
+    const frac = item.val / total;
+    const dash = frac * circ;
+    paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+      stroke="${item.color}" stroke-width="18"
+      stroke-dasharray="${dash} ${circ - dash}"
+      stroke-dashoffset="${-offset}"
+      transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += dash;
+  }
+  return paths;
+}
+
+/* ── Keyboard shortcut ────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyzeText();
+});
+</script>
+</body>
+</html>

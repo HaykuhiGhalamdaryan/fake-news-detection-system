@@ -54,7 +54,7 @@ def generate_signals(
     if credibility_score < 40:
         signals.append("LOW_CREDIBILITY")
 
-    if support_score < 0.15:
-        signals.append("FACT_CONTRADICTION")
+    # if support_score < 0.15:
+    #     signals.append("FACT_CONTRADICTION")
 
     return signals
