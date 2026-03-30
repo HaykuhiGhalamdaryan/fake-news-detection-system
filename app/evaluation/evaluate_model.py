@@ -1,11 +1,5 @@
 #evaluate_model.py
 
-"""Evaluate fake news model performance on a labeled CSV dataset.
-
-Run:
-    python app/evaluation/evaluate_model.py [path_to_csv]
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -16,7 +10,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 
-# Allow running this file directly: python app/evaluation/evaluate_model.py
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -25,15 +18,13 @@ from app.evaluation.dashboard import plot_confusion_matrix, plot_metrics
 
 
 def predict_label(text: str) -> str:
-    """Predict FAKE/REAL label using the model fake_score threshold."""
-    # Lazy import so simple input validation errors return quickly.
+    """Predict FAKE/REAL label using the same threshold as the verdict engine (FAKE_HIGH = 0.62)."""
     from app.services.nlp_service import analyze_text
 
     result = analyze_text(text)
     fake_score = float(result.get("fake_score", 0.0))
 
-    # Zero-shot fake class threshold tuned to be less aggressive.
-    return "FAKE" if fake_score >= 0.75 else "REAL"
+    return "FAKE" if fake_score >= 0.62 else "REAL"
 
 
 def save_report(accuracy, precision, recall, f1, cm):
@@ -62,7 +53,6 @@ def evaluate(csv_path: Path, save: bool = False) -> None:
         print(f"Error: missing required columns: {', '.join(sorted(missing))}")
         sys.exit(1)
 
-    # Keep only valid FAKE/REAL labels for consistent metric computation.
     df = df.copy()
     df["label"] = df["label"].astype(str).str.strip().str.upper()
     df = df[df["label"].isin(["FAKE", "REAL"])].dropna(subset=["text", "label"])
@@ -79,7 +69,6 @@ def evaluate(csv_path: Path, save: bool = False) -> None:
     recall = recall_score(y_true, y_pred, pos_label="FAKE", zero_division=0)
     f1 = f1_score(y_true, y_pred, pos_label="FAKE", zero_division=0)
 
-    # With labels=["REAL", "FAKE"], matrix layout is [[TN, FP], [FN, TP]].
     cm = confusion_matrix(y_true, y_pred, labels=["REAL", "FAKE"])
     metrics = {
         "accuracy": accuracy,
@@ -107,7 +96,6 @@ def evaluate(csv_path: Path, save: bool = False) -> None:
     plot_metrics(metrics, save_path=metrics_path)
     plot_confusion_matrix(cm, save_path=confusion_path)
 
-    # Show both charts when evaluation completes.
     plt.show()
 
 

@@ -31,19 +31,12 @@ from __future__ import annotations
 
 import re
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
 CHUNK_SIZE    = 300   # words per chunk
 CHUNK_OVERLAP = 50    # words of overlap between chunks
 MAX_CHUNKS    = 8     # maximum chunks to process (performance cap)
 MIN_CHUNK_LEN = 30    # minimum words for a chunk to be processed
 SHORT_TEXT_THRESHOLD = 280  # texts shorter than this skip chunking entirely
 
-
-# ---------------------------------------------------------------------------
-# Text splitting
-# ---------------------------------------------------------------------------
 
 def _tokenize_words(text: str) -> list[str]:
     """Split text into words, preserving whitespace boundaries."""
@@ -81,10 +74,6 @@ def _split_into_chunks(text: str) -> list[str]:
 
     return chunks if chunks else [text]
 
-
-# ---------------------------------------------------------------------------
-# Score aggregation
-# ---------------------------------------------------------------------------
 
 def _position_weight(index: int, total: int) -> float:
     """
@@ -143,10 +132,6 @@ def aggregate_chunk_scores(chunk_scores: list[float]) -> float:
     return round(weighted_sum / total_weight, 4)
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
 def needs_chunking(text: str) -> bool:
     """Return True if text is long enough to require chunking."""
     return len(_tokenize_words(text)) > SHORT_TEXT_THRESHOLD
@@ -182,7 +167,7 @@ def analyze_with_chunking(text: str, analyze_fn) -> dict:
         result["was_chunked"] = False
         return result
 
-    # --- Analyze each chunk ---
+    # Analyze each chunk 
     chunk_results = []
     chunk_scores  = []
 
@@ -203,7 +188,6 @@ def analyze_with_chunking(text: str, analyze_fn) -> dict:
         result["was_chunked"] = False
         return result
 
-    # --- Aggregate scores ---
     aggregated_fake_score = aggregate_chunk_scores(chunk_scores)
 
     # Use sentiment from the first chunk (most representative — headline/intro)
@@ -214,7 +198,6 @@ def analyze_with_chunking(text: str, analyze_fn) -> dict:
         "sentiment_score":  first["sentiment_score"],
         "fake_label":       "FAKE" if aggregated_fake_score >= 0.5 else "REAL",
         "fake_score":       aggregated_fake_score,
-        # Debug/transparency fields
         "primary_score":    first.get("primary_score", aggregated_fake_score),
         "secondary_score":  first.get("secondary_score", aggregated_fake_score),
         "chunks_analyzed":  len(chunk_results),

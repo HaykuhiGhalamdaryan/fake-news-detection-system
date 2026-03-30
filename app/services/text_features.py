@@ -26,10 +26,6 @@ import re
 import string
 
 
-# ---------------------------------------------------------------------------
-# Signal definitions
-# ---------------------------------------------------------------------------
-
 # Clickbait phrases — ordered roughly by severity
 CLICKBAIT_PHRASES = [
     "you won't believe",
@@ -99,10 +95,6 @@ NUMERICAL_EXAGGERATION_PATTERNS = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Detection helpers
-# ---------------------------------------------------------------------------
-
 def _caps_ratio(text: str) -> float:
     """Fraction of alphabetic characters that are uppercase."""
     letters = [c for c in text if c.isalpha()]
@@ -146,10 +138,8 @@ def _find_patterns(text_lower: str, patterns: list[str]) -> list[str]:
     return [p for p in patterns if re.search(p, text_lower)]
 
 
-# ---------------------------------------------------------------------------
 # Scoring weights
 # Each signal contributes this much to the raw manipulation score (0-1 sum)
-# ---------------------------------------------------------------------------
 
 WEIGHTS = {
     "high_caps_ratio":            0.20,
@@ -162,10 +152,6 @@ WEIGHTS = {
     "numerical_exaggeration":     0.08,   # per match, capped at 0.16
 }
 
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
 
 def analyze_text_features(text: str) -> dict:
     """
@@ -188,7 +174,6 @@ def analyze_text_features(text: str) -> dict:
     signals: list[str] = []
     details: dict = {}
 
-    # --- 1. ALL CAPS ratio ---
     caps = _caps_ratio(text)
     details["caps_ratio"] = round(caps, 3)
     if caps > 0.5:
@@ -198,24 +183,20 @@ def analyze_text_features(text: str) -> dict:
         raw_score += WEIGHTS["high_caps_ratio"] * 0.5
         signals.append("MODERATE_CAPS_RATIO")
 
-    # --- 2. Excessive punctuation (!!!, ???) ---
     if _excessive_punctuation(text):
         raw_score += WEIGHTS["excessive_punctuation"]
         signals.append("EXCESSIVE_PUNCTUATION")
 
-    # --- 3. High punctuation density ---
     punct_density = _punctuation_density(text)
     details["punctuation_density"] = round(punct_density, 4)
     if punct_density > 0.05:
         raw_score += WEIGHTS["high_punctuation_density"]
         signals.append("HIGH_PUNCTUATION_DENSITY")
 
-    # --- 4. Title case abuse ---
     if _is_title_case_abuse(text):
         raw_score += WEIGHTS["title_case_abuse"]
         signals.append("TITLE_CASE_ABUSE")
 
-    # --- 5. Clickbait phrases ---
     clickbait_found = _find_phrases(text_lower, CLICKBAIT_PHRASES)
     details["clickbait_phrases"] = clickbait_found
     if clickbait_found:
@@ -223,7 +204,6 @@ def analyze_text_features(text: str) -> dict:
         raw_score += penalty
         signals.append("CLICKBAIT_LANGUAGE")
 
-    # --- 6. Hyperbolic language ---
     hyperbolic_found = _find_patterns(text_lower, HYPERBOLIC_PATTERNS)
     details["hyperbolic_matches"] = hyperbolic_found
     if hyperbolic_found:
@@ -231,7 +211,6 @@ def analyze_text_features(text: str) -> dict:
         raw_score += penalty
         signals.append("HYPERBOLIC_LANGUAGE")
 
-    # --- 7. Vague attribution ---
     vague_found = _find_patterns(text_lower, VAGUE_ATTRIBUTION_PATTERNS)
     details["vague_attributions"] = vague_found
     if vague_found:
@@ -239,7 +218,6 @@ def analyze_text_features(text: str) -> dict:
         raw_score += penalty
         signals.append("VAGUE_ATTRIBUTION")
 
-    # --- 8. Numerical exaggeration ---
     numerical_found = _find_patterns(text_lower, NUMERICAL_EXAGGERATION_PATTERNS)
     details["numerical_exaggerations"] = numerical_found
     if numerical_found:
@@ -247,10 +225,8 @@ def analyze_text_features(text: str) -> dict:
         raw_score += penalty
         signals.append("NUMERICAL_EXAGGERATION")
 
-    # --- Final score: clamp to 0-1 ---
     manipulation_score = round(min(raw_score, 1.0), 4)
 
-    # --- Level classification ---
     if manipulation_score >= 0.50:
         manipulation_level = "HIGH"
     elif manipulation_score >= 0.25:

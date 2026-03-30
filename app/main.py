@@ -26,7 +26,7 @@ app = FastAPI(
     version="1.0"
 )
 
-# --- CORS: allow browser to call the API from index.html ---
+# CORS: allow browser to call the API from index.html
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Global error handler ---
+# Global error handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     tb = traceback.format_exc()
@@ -44,16 +44,15 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": str(exc), "traceback": tb},
     )
 
-# --- Routers ---
+# Routers
 app.include_router(analyze.router)
 app.include_router(health.router)
 app.include_router(history.router)
 app.include_router(analytics.router)
 
-# --- Serve static files (index.html) ---
+# Serve static files (index.html) 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# --- Root: open index.html directly at http://127.0.0.1:8000 ---
 @app.get("/")
 def root():
     return FileResponse("static/index.html")

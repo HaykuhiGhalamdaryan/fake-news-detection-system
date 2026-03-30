@@ -11,12 +11,7 @@ from __future__ import annotations
 
 import re
 
-# ---------------------------------------------------------------------------
-# Regex-based manipulation patterns
-# Each entry: (pattern_string, display_name)
-# ---------------------------------------------------------------------------
 MANIPULATION_PATTERNS = [
-    # Conspiracy / cover-up language
     (r"\bsecret(ly)?\b",                          "secret"),
     (r"\bhidden\s+truth\b",                       "hidden truth"),
     (r"\bthey\s+(don'?t|do\s+not)\s+want\s+you", "they don't want you to know"),
@@ -37,7 +32,6 @@ MANIPULATION_PATTERNS = [
                                                   "government hiding"),
 ]
 
-# Emotional trigger words (kept for detect_emotional_language)
 EMOTIONAL_WORDS = [
     "shocking", "secret", "hidden", "truth", "exposed", "breaking",
     "urgent", "cover-up", "conspiracy", "hiding", "scandal", "lies",

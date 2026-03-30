@@ -38,7 +38,6 @@ def llm_analyze(text: str):
     if strong_claim_hits:
         detected_patterns.append("STRONG_CLAIMS")
 
-    # Per rule: emotional keywords -> emotional, otherwise neutral.
     if emotional_hits:
         tone = "emotional"
     else:

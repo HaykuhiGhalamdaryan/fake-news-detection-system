@@ -1,28 +1,5 @@
 # fact_check_service.py
 
-"""Multi-source fact-checking with strong contradiction detection.
-
-Sources: NewsAPI + Wikipedia + DuckDuckGo (parallel fetch)
-
-Contradiction detection
------------------------
-For each candidate evidence sentence we compute TWO similarity scores:
-
-  support_sim      = cosine_sim(claim,    evidence_sentence)
-  contradiction_sim = cosine_sim(negation, evidence_sentence)
-
-net = support_sim - contradiction_sim
-
-If the evidence sentence says something like:
-  "Armenia is in the South Caucasus, not South America"
-then contradiction_sim will be HIGH and net will be negative → CONTRADICTED.
-
-We also apply a geographic/entity mismatch penalty: if the evidence
-mentions an explicit geographic contradiction keyword (e.g. the claim
-says "South America" but the evidence says "Caucasus" or "Europe"),
-we boost the contradiction score directly.
-"""
-
 from __future__ import annotations
 
 import os
@@ -44,10 +21,6 @@ def _get_model() -> SentenceTransformer:
     return _model
 
 
-# ---------------------------------------------------------------------------
-# Query builder — entity-first
-# ---------------------------------------------------------------------------
-
 _STOP_WORDS = {
     "the", "is", "in", "at", "of", "and", "to", "a", "an", "about",
     "this", "that", "has", "have", "been", "was", "were", "are", "on",
@@ -55,8 +28,19 @@ _STOP_WORDS = {
     "not", "he", "she", "they", "we", "you", "i", "do", "did", "will",
     "would", "could", "should", "may", "might", "also", "just", "than",
     "then", "there", "their", "what", "which", "who", "how", "when",
-    "located", "capital", "country", "city", "place", "region",
+    "located", "capital", "country", "city", "place", "region", "very",
+    "standing", "under", "over", "only", "also", "even", "still",
 }
+
+_NEGATION_PATTERNS = re.compile(
+    r"\b(not|never|isn'?t|aren'?t|wasn'?t|weren'?t|don'?t|doesn'?t"
+    r"|didn'?t|no longer|false that|untrue|incorrect)\b",
+    re.IGNORECASE,
+)
+
+
+def _claim_has_negation(claim: str) -> bool:
+    return bool(_NEGATION_PATTERNS.search(claim))
 
 
 def _build_query(text: str, max_words: int = 6) -> str:
@@ -81,10 +65,6 @@ def _split_sentences(text: str, max_sentences: int = 60) -> list[str]:
     return [s.strip() for s in sentences if len(s.strip()) > 20][:max_sentences]
 
 
-# ---------------------------------------------------------------------------
-# Sources
-# ---------------------------------------------------------------------------
-
 _NEWS_API_KEY = os.getenv("NEWS_API_KEY", "")
 
 
@@ -100,7 +80,7 @@ def _fetch_newsapi(query: str) -> list[str]:
         )
         snippets = []
         for a in r.json().get("articles", []):
-            combined = f"{a.get('title','')}. {a.get('description','')}. {a.get('content','')}"
+            combined = f"{a.get('title', '')}. {a.get('description', '')}. {a.get('content', '')}"
             snippets.extend(_split_sentences(combined))
         return snippets
     except Exception:
@@ -141,73 +121,95 @@ def _fetch_duckduckgo(query: str) -> list[str]:
         return []
 
 
-# ---------------------------------------------------------------------------
-# Negation builder
-# ---------------------------------------------------------------------------
-
-def _build_negation(claim: str) -> str:
-    """Insert 'not/NOT' into the claim to build its negation."""
-    patterns = [
-        (r"\b(is|are|was|were)\b",      r"\1 not"),
-        (r"\b(has|have|had)\b",          r"\1 not"),
-        (r"\b(located)\b",               r"not \1"),
-        (r"\b(belongs?)\b",              r"does not belong"),
-    ]
-    for pat, rep in patterns:
-        result = re.sub(pat, rep, claim, count=1, flags=re.IGNORECASE)
-        if result != claim:
-            return result
-    return f"It is false that {claim}"
-
-
-# ---------------------------------------------------------------------------
-# Geographic / entity mismatch detector
-# ---------------------------------------------------------------------------
-
-# Map of claim keywords → contradicting evidence keywords
-# If claim contains key A but evidence contains value B → contradiction boost
 _GEO_CONTRADICTIONS = [
-    ({"south america", "latin america", "colombia", "brazil"},
-     {"caucasus", "europe", "asia", "middle east", "eurasia", "yerevan"}),
-    ({"north america", "united states", "usa", "canada"},
-     {"caucasus", "europe", "asia", "africa", "australia"}),
-    ({"africa"},
-     {"europe", "asia", "america", "caucasus", "pacific"}),
-    ({"asia"},
-     {"europe", "america", "africa", "pacific"}),
+    (
+        {"south america", "latin america", "colombia", "brazil", "peru",
+         "argentina", "chile", "venezuela", "ecuador"},
+        {"caucasus", "south caucasus", "transcaucasia", "yerevan",
+         "tbilisi", "baku", "georgia", "azerbaijan"}
+    ),
+    (
+        {"north america", "united states", "usa", "canada", "mexico"},
+        {"caucasus", "europe", "asia", "africa", "australia", "middle east"}
+    ),
+    (
+        {"western europe", "france", "germany", "spain", "italy"},
+        {"caucasus", "central asia", "middle east", "africa"}
+    ),
+    (
+        {"africa", "sub-saharan"},
+        {"europe", "asia", "america", "caucasus", "pacific", "scandinavia"}
+    ),
+    (
+        {"australia", "oceania"},
+        {"europe", "asia", "america", "africa", "caucasus"}
+    ),
 ]
 
 
 def _geo_mismatch_penalty(claim: str, evidence: str) -> float:
+    claim_lower    = claim.lower()
+    evidence_lower = evidence.lower()
+    for claim_kws, contra_kws in _GEO_CONTRADICTIONS:
+        if any(kw in claim_lower    for kw in claim_kws) and \
+           any(kw in evidence_lower for kw in contra_kws):
+            return 0.50
+    return 0.0
+
+
+def _extract_proper_nouns(text: str) -> set[str]:
+    tokens = re.findall(r"\b[A-Z][a-z]{2,}\b", text)
+    return {t.lower() for t in tokens}
+
+
+def _entity_overlap(claim: str, evidence: str) -> float:
+    """Fraction of claim's proper nouns that appear in evidence."""
+    claim_entities = _extract_proper_nouns(claim)
+    evidence_lower = evidence.lower()
+    if not claim_entities:
+        return 1.0
+    matches = sum(1 for e in claim_entities if e in evidence_lower)
+    return matches / len(claim_entities)
+
+
+def _topic_relevance(claim: str, evidence: str) -> float:
     """
-    Return an additional contradiction penalty (0-0.3) if the claim's
-    geographic keywords are contradicted by the evidence's geography.
+    Fraction of claim's KEY CONTENT WORDS that appear in the evidence.
+
+    This checks whether the evidence is actually about the same topic
+    as the claim — not just whether it mentions the same person/entity.
+
+    Example:
+      claim    = "Napoleon was very short, standing under 5 feet tall"
+      keywords = ["napoleon", "short", "feet", "tall", "standing"]
+      evidence = "David managed to persuade him to sit for a portrait in 1798"
+      → none of the topic keywords appear → topic_relevance = 0.0 → NOT relevant
+
+      claim    = "Yerevan is the capital of Armenia"
+      keywords = ["yerevan", "capital", "armenia"]
+      evidence = "Yerevan is the capital and largest city of Armenia"
+      → all keywords appear → topic_relevance = 1.0 → relevant ✅
     """
     claim_lower    = claim.lower()
     evidence_lower = evidence.lower()
 
-    for claim_keywords, contra_keywords in _GEO_CONTRADICTIONS:
-        claim_hit    = any(kw in claim_lower    for kw in claim_keywords)
-        evidence_hit = any(kw in evidence_lower for kw in contra_keywords)
-        if claim_hit and evidence_hit:
-            return 0.25   # strong geographic contradiction
+    words = re.findall(r"\b[a-z]{4,}\b", claim_lower)
+    content_words = [w for w in words if w not in _STOP_WORDS]
 
-    return 0.0
+    if not content_words:
+        return 1.0  
+
+    matches = sum(1 for w in content_words if w in evidence_lower)
+    return matches / len(content_words)
 
 
-# ---------------------------------------------------------------------------
-# Scoring helpers
-# ---------------------------------------------------------------------------
-
-def _best_match(
-    claim_emb,
-    sentences: list[str],
-    model: SentenceTransformer,
-) -> tuple[float, str]:
+def _best_match(claim_emb, sentences: list[str], model) -> tuple[float, str]:
     best_score, best_sentence = 0.0, ""
     for s in sentences:
         try:
-            score = float(util.cos_sim(claim_emb, model.encode(s, convert_to_tensor=True)).item())
+            score = float(util.cos_sim(
+                claim_emb, model.encode(s, convert_to_tensor=True)
+            ).item())
             if score > best_score:
                 best_score, best_sentence = score, s
         except Exception:
@@ -215,42 +217,30 @@ def _best_match(
     return best_score, best_sentence
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
 def fact_check_claim(claim: str) -> dict:
-    """
-    Returns
-    -------
-    {
-        sources, found_sources, support_score,
-        contradiction_score, net_support_score,
-        evidence, source_used, verdict_hint
-    }
-    """
-    model = _get_model()
-    query = _build_query(claim)
+    model        = _get_model()
+    query        = _build_query(claim)
+    has_negation = _claim_has_negation(claim)
 
     try:
-        claim_emb    = model.encode(claim,              convert_to_tensor=True)
-        negation_emb = model.encode(_build_negation(claim), convert_to_tensor=True)
+        claim_emb = model.encode(claim, convert_to_tensor=True)
     except Exception:
-        return {"sources": [], "found_sources": [], "support_score": 0.1,
-                "contradiction_score": 0.0, "net_support_score": 0.1,
-                "evidence": ["Embedding failed."], "source_used": "none",
-                "verdict_hint": "UNKNOWN"}
+        return {
+            "sources": [], "found_sources": [], "support_score": 0.1,
+            "contradiction_score": 0.0, "net_support_score": 0.1,
+            "evidence": ["Embedding failed."], "source_used": "none",
+            "verdict_hint": "UNKNOWN", "entity_overlap": 0.0,
+            "topic_relevance": 0.0,
+        }
 
-    # Fetch all sources in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
         f_news = ex.submit(_fetch_newsapi,    query)
         f_wiki = ex.submit(_fetch_wikipedia,  query)
         f_ddg  = ex.submit(_fetch_duckduckgo, query)
-        news_sents               = f_news.result()
-        wiki_sents, wiki_titles  = f_wiki.result()
-        ddg_sents                = f_ddg.result()
+        news_sents              = f_news.result()
+        wiki_sents, wiki_titles = f_wiki.result()
+        ddg_sents               = f_ddg.result()
 
-    # Find best matching sentence across all sources
     news_score, news_sent = _best_match(claim_emb, news_sents, model)
     wiki_score, wiki_sent = _best_match(claim_emb, wiki_sents, model)
     ddg_score,  ddg_sent  = _best_match(claim_emb, ddg_sents,  model)
@@ -262,32 +252,43 @@ def fact_check_claim(claim: str) -> dict:
     ]
     best_score, best_sentence, best_source = max(results, key=lambda x: x[0])
 
-    # Compute contradiction score against best evidence sentence
-    contradiction_score = 0.0
-    geo_penalty         = 0.0
-    if best_sentence:
-        try:
-            ev_emb = model.encode(best_sentence, convert_to_tensor=True)
-            contradiction_score = float(util.cos_sim(negation_emb, ev_emb).item())
-        except Exception:
-            pass
-        # Geographic mismatch penalty
-        geo_penalty = _geo_mismatch_penalty(claim, best_sentence)
-        contradiction_score = min(contradiction_score + geo_penalty, 1.0)
+    geo_penalty      = _geo_mismatch_penalty(claim, best_sentence) if best_sentence else 0.0
+    entity_overlap   = _entity_overlap(claim, best_sentence)       if best_sentence else 0.0
+    topic_relevance  = _topic_relevance(claim, best_sentence)      if best_sentence else 0.0
+    entity_penalty   = 0.20 if entity_overlap < 0.40 else 0.0
+    contradiction_score = min(geo_penalty + entity_penalty, 0.60)
+    net_support      = round(best_score - contradiction_score, 4)
 
-    # Calibration boost for strong matches
-    if best_score > 0.5:
-        best_score = min(best_score + 0.08, 1.0)
-
-    net_support = round(best_score - contradiction_score, 4)
-
-    # Determine verdict hint
-    if best_score < 0.30:
+    if best_score < 0.25:
         verdict_hint = "UNKNOWN"
-    elif net_support >= 0.35:
-        verdict_hint = "SUPPORTED"
-    elif net_support <= -0.03 or geo_penalty > 0:
+
+    elif has_negation:
+        verdict_hint = "UNKNOWN"
+
+    elif geo_penalty > 0:
         verdict_hint = "CONTRADICTED"
+
+    elif entity_overlap < 0.30:
+        verdict_hint = "CONTRADICTED"
+
+    elif topic_relevance < 0.30:
+        verdict_hint = "UNKNOWN"
+
+    elif (
+        best_score >= 0.75          
+        and entity_overlap >= 0.60  
+        and topic_relevance >= 0.40 
+        and contradiction_score == 0.0
+    ):
+        verdict_hint = "SUPPORTED"
+
+    elif (
+        net_support >= 0.40
+        and entity_overlap >= 0.50
+        and topic_relevance >= 0.40
+    ):
+        verdict_hint = "SUPPORTED"
+
     else:
         verdict_hint = "UNKNOWN"
 
@@ -298,10 +299,13 @@ def fact_check_claim(claim: str) -> dict:
     )
 
     if not best_sentence:
-        return {"sources": active_sources, "found_sources": wiki_titles,
-                "support_score": 0.1, "contradiction_score": 0.0,
-                "net_support_score": 0.1, "evidence": ["No evidence found."],
-                "source_used": "none", "verdict_hint": "UNKNOWN"}
+        return {
+            "sources": active_sources, "found_sources": wiki_titles,
+            "support_score": 0.1, "contradiction_score": 0.0,
+            "net_support_score": 0.1, "evidence": ["No evidence found."],
+            "source_used": "none", "verdict_hint": "UNKNOWN",
+            "entity_overlap": 0.0, "topic_relevance": 0.0,
+        }
 
     return {
         "sources":             active_sources,
@@ -312,4 +316,6 @@ def fact_check_claim(claim: str) -> dict:
         "evidence":            [best_sentence],
         "source_used":         best_source,
         "verdict_hint":        verdict_hint,
+        "entity_overlap":      round(entity_overlap, 3),
+        "topic_relevance":     round(topic_relevance, 3),
     }

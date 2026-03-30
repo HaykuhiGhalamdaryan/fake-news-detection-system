@@ -1,0 +1,9 @@
+===== MODEL EVALUATION =====
+Accuracy: 0.75
+Precision: 0.95
+Recall: 0.53
+F1-score: 0.68
+
+Confusion Matrix:
+[[39  1]
+ [19 21]]

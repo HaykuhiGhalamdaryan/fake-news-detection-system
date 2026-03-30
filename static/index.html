@@ -497,6 +497,64 @@ nav { display: flex; gap: 4px; }
   margin-bottom: 14px;
 }
 
+
+/* ── Input mode tabs ───────────────────────────────────────────── */
+.input-tabs {
+  display: flex; gap: 6px; margin-bottom: 14px;
+}
+.input-tab {
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 8px 16px;
+  font-size: .85rem; font-weight: 500; color: var(--text-2);
+  transition: all .15s; cursor: pointer;
+}
+.input-tab.active {
+  background: var(--accent-bg); border-color: var(--accent);
+  color: var(--accent);
+}
+.input-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+/* ── URL input ─────────────────────────────────────────────────── */
+.url-input-wrap {
+  display: flex; gap: 10px; align-items: stretch;
+}
+#url-input {
+  flex: 1; padding: 12px 16px;
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  font-family: var(--ff-body); font-size: .95rem;
+  color: var(--text); background: var(--surface);
+  outline: none; transition: border-color .2s, box-shadow .2s;
+  min-width: 0;
+}
+#url-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(26,77,143,.1);
+}
+#url-input::placeholder { color: var(--text-3); }
+#url-input.invalid { border-color: #FECACA; box-shadow: 0 0 0 3px rgba(220,38,38,.08); }
+.url-hint {
+  margin-top: 10px; font-size: .82rem; color: var(--text-3); line-height: 1.5;
+}
+.url-meta {
+  margin-top: 12px; background: var(--accent-bg);
+  border: 1px solid #C7D9F5; border-radius: 8px;
+  padding: 10px 14px; font-size: .83rem; color: var(--text-2);
+  border-left: 3px solid var(--accent);
+}
+.url-meta strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+
+/* ── Article warning banner ────────────────────────────────────── */
+.article-warning {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #FFFBEB; border: 1px solid #FCD34D;
+  border-left: 3px solid #F59E0B;
+  border-radius: 8px; padding: 12px 14px;
+  font-size: .83rem; color: #92400E; line-height: 1.5;
+  margin-bottom: 0;
+}
+.article-warning-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
 /* ── Utility ───────────────────────────────────────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 .mt-4 { margin-top: 16px; }
@@ -535,26 +593,54 @@ nav { display: flex; gap: 4px; }
 
       <!-- Input -->
       <div class="input-panel">
-        <div class="textarea-wrap">
-          <textarea id="claim-input" placeholder="Paste a news headline, article excerpt, or any claim here…" oninput="updateCharCount()"></textarea>
-          <div class="textarea-footer">
-            <span class="char-count" id="char-count">0 chars</span>
-            <button class="analyze-btn" id="analyze-btn" onclick="analyzeText()">
+
+        <!-- Mode tabs -->
+        <div class="input-tabs">
+          <button class="input-tab active" id="tab-text" onclick="switchTab('text')">✏️ Paste Text</button>
+          <button class="input-tab" id="tab-url"  onclick="switchTab('url')">🔗 Analyze URL</button>
+        </div>
+
+        <!-- Text mode -->
+        <div id="mode-text">
+          <div class="textarea-wrap">
+            <textarea id="claim-input" placeholder="Paste a news headline, article excerpt, or any claim here…" oninput="updateCharCount()"></textarea>
+            <div class="textarea-footer">
+              <span class="char-count" id="char-count">0 chars</span>
+              <button class="analyze-btn" id="analyze-btn" onclick="analyzeText()">
+                <div class="spinner"></div>
+                <span class="btn-text">Analyze →</span>
+              </button>
+            </div>
+          </div>
+          <div class="examples mt-4">
+            <div class="examples-label">Try an example</div>
+            <div class="pills">
+              <div class="pill" onclick="setExample(this)">Yerevan is the capital of Armenia.</div>
+              <div class="pill" onclick="setExample(this)">Armenia is located in South America.</div>
+              <div class="pill" onclick="setExample(this)">Scientists discover cure for all cancers!</div>
+              <div class="pill" onclick="setExample(this)">The government is hiding the truth about vaccines!</div>
+              <div class="pill" onclick="setExample(this)">The Earth orbits the Sun.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- URL mode -->
+        <div id="mode-url" style="display:none">
+          <div class="url-input-wrap">
+            <input type="url" id="url-input"
+              placeholder="https://example.com/news-article"
+              oninput="updateUrlState()"
+              onkeydown="if(event.key==='Enter') analyzeURL()"
+            />
+            <button class="analyze-btn" id="analyze-url-btn" onclick="analyzeURL()" disabled>
               <div class="spinner"></div>
-              <span class="btn-text">Analyze →</span>
+              <span class="btn-text">Fetch &amp; Analyze →</span>
             </button>
           </div>
+          <div class="url-hint" id="url-hint">Paste any news article URL — the text will be extracted and analyzed automatically.</div>
+          <div class="url-meta" id="url-meta" style="display:none"></div>
         </div>
-        <div class="examples mt-4">
-          <div class="examples-label">Try an example</div>
-          <div class="pills">
-            <div class="pill" onclick="setExample(this)">Yerevan is the capital of Armenia.</div>
-            <div class="pill" onclick="setExample(this)">Armenia is located in South America.</div>
-            <div class="pill" onclick="setExample(this)">Scientists discover cure for all cancers!</div>
-            <div class="pill" onclick="setExample(this)">The government is hiding the truth about vaccines!</div>
-            <div class="pill" onclick="setExample(this)">The Earth orbits the Sun.</div>
-          </div>
-        </div>
+
       </div>
 
       <!-- Result -->
@@ -812,7 +898,11 @@ function renderResult(d) {
        </div>`
     : '<span style="color:var(--text-3);font-size:.85rem">No evidence found</span>';
 
-  document.getElementById('result-content').innerHTML = `
+  const warningHTML = d.article_warning
+    ? `<div class="article-warning"><span class="article-warning-icon">⚠️</span><span>${escHtml(d.article_warning)}</span></div>`
+    : '';
+
+  document.getElementById('result-content').innerHTML = warningHTML + `
     <div class="verdict-section">
       <div class="verdict-badge ${vc}">${verdictEmoji(d.verdict)} ${d.verdict}</div>
       <div class="confidence-bar-wrap">
@@ -1090,6 +1180,68 @@ function buildDonut(data) {
     offset += dash;
   }
   return paths;
+}
+
+
+/* ── Input mode tabs ──────────────────────────────────────────── */
+function switchTab(mode) {
+  document.getElementById('mode-text').style.display = mode === 'text' ? '' : 'none';
+  document.getElementById('mode-url').style.display  = mode === 'url'  ? '' : 'none';
+  document.getElementById('tab-text').classList.toggle('active', mode === 'text');
+  document.getElementById('tab-url').classList.toggle('active',  mode === 'url');
+}
+
+/* ── URL analyzer ─────────────────────────────────────────────── */
+function updateUrlState() {
+  const val = document.getElementById('url-input').value.trim();
+  const btn = document.getElementById('analyze-url-btn');
+  const hint = document.getElementById('url-hint');
+  const isValid = val.startsWith('http://') || val.startsWith('https://');
+  btn.disabled = !isValid;
+  document.getElementById('url-input').classList.toggle('invalid', val.length > 0 && !isValid);
+  hint.textContent = val.length > 0 && !isValid
+    ? 'URL must start with http:// or https://'
+    : 'Paste any news article URL — the text will be extracted and analyzed automatically.';
+}
+
+async function analyzeURL() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) return;
+
+  const btn = document.getElementById('analyze-url-btn');
+  btn.classList.add('loading'); btn.disabled = true;
+  document.getElementById('url-meta').style.display = 'none';
+  document.getElementById('result-empty').style.display = 'none';
+  document.getElementById('result-content').innerHTML =
+    '<div class="loading-overlay"><div class="big-spinner"></div><span>Fetching article…</span></div>';
+  document.getElementById('result-content').style.display = 'block';
+
+  try {
+    const res = await fetch(API + '/analyze-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'API error ' + res.status);
+    }
+    const d = await res.json();
+    // Show extracted article info
+    const meta = document.getElementById('url-meta');
+    meta.innerHTML = '<strong>Article extracted successfully</strong>' +
+      (d._article_title ? escHtml(d._article_title) + ' — ' : '') +
+      '<a href="' + escHtml(url) + '" target="_blank" style="color:var(--accent)">View source</a>';
+    meta.style.display = 'block';
+    renderResult(d);
+  } catch (e) {
+    showToast(e.message || 'Could not analyze URL.', true);
+    document.getElementById('result-content').style.display = 'none';
+    document.getElementById('result-empty').style.display = 'flex';
+  } finally {
+    btn.classList.remove('loading');
+    updateUrlState();
+  }
 }
 
 /* ── Keyboard shortcut ────────────────────────────────────────── */
