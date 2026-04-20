@@ -555,6 +555,77 @@ nav { display: flex; gap: 4px; }
 }
 .article-warning-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
 
+
+/* ── Source analysis panel ─────────────────────────────────────────────── */
+.source-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.source-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.source-domain {
+  font-size: .9rem; font-weight: 600; color: var(--text);
+  font-family: var(--ff-mono);
+}
+.source-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: .75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.source-badge.mainstream  { background: #DCFCE7; color: #166534; }
+.source-badge.tabloid     { background: #FEF3C7; color: #92400E; }
+.source-badge.satire      { background: #EDE9FE; color: #5B21B6; }
+.source-badge.conspiracy  { background: #FEE2E2; color: #991B1B; }
+.source-badge.state-media { background: #FEF3C7; color: #92400E; }
+.source-badge.unknown     { background: var(--bg); color: var(--text-3); border: 1px solid var(--border); }
+.source-body { padding: 14px 18px; }
+.source-row  { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.source-row:last-child { margin-bottom: 0; }
+.source-key  { font-size: .75rem; color: var(--text-3); text-transform: uppercase;
+               letter-spacing: .05em; font-weight: 500; min-width: 100px; flex-shrink: 0; }
+.source-val  { font-size: .85rem; color: var(--text); font-weight: 500; }
+.source-notes { font-size: .82rem; color: var(--text-2); line-height: 1.5; }
+.source-cred-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; flex: 1; }
+.source-cred-fill { height: 100%; border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+.source-warning {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: #FEF2F2; border: 1px solid #FECACA;
+  border-left: 3px solid #EF4444;
+  border-radius: 8px; padding: 10px 14px;
+  font-size: .82rem; color: #991B1B; line-height: 1.5;
+  margin-top: 10px;
+}
+.source-verified {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .76rem; color: var(--text-3); margin-top: 8px;
+}
+.source-verified-dot { width: 7px; height: 7px; border-radius: 50%; background: #16A34A; flex-shrink: 0; }
+
+
+/* ── Source-only result panel ──────────────────────────────────────────── */
+.source-only-panel {
+  padding: 28px 24px;
+}
+.source-only-header {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+}
+.source-only-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--accent-bg); display: flex; align-items: center;
+  justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.source-only-title {
+  font-family: var(--ff-display); font-size: 1.2rem; font-weight: 700;
+  color: var(--text); margin-bottom: 2px;
+}
+.source-only-sub { font-size: .85rem; color: var(--text-2); }
+
 /* ── Utility ───────────────────────────────────────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 .mt-4 { margin-top: 16px; }
@@ -902,7 +973,9 @@ function renderResult(d) {
     ? `<div class="article-warning"><span class="article-warning-icon">⚠️</span><span>${escHtml(d.article_warning)}</span></div>`
     : '';
 
-  document.getElementById('result-content').innerHTML = warningHTML + `
+  const sourceHTML = renderSourceAnalysis(d.source_analysis);
+
+  document.getElementById('result-content').innerHTML = warningHTML + sourceHTML + `
     <div class="verdict-section">
       <div class="verdict-badge ${vc}">${verdictEmoji(d.verdict)} ${d.verdict}</div>
       <div class="confidence-bar-wrap">
@@ -1227,11 +1300,15 @@ async function analyzeURL() {
       throw new Error(err.detail || 'API error ' + res.status);
     }
     const d = await res.json();
-    // Show extracted article info
+    // Source-only mode — homepage or news source URL
+    if (d.mode === 'source_only') {
+      renderSourceOnly(d.source_analysis);
+      return;
+    }
+    // Article mode — show meta + full result
     const meta = document.getElementById('url-meta');
     meta.innerHTML = '<strong>Article extracted successfully</strong>' +
-      (d._article_title ? escHtml(d._article_title) + ' — ' : '') +
-      '<a href="' + escHtml(url) + '" target="_blank" style="color:var(--accent)">View source</a>';
+      ' — <a href="' + escHtml(url) + '" target="_blank" style="color:var(--accent)">View source</a>';
     meta.style.display = 'block';
     renderResult(d);
   } catch (e) {
@@ -1242,6 +1319,165 @@ async function analyzeURL() {
     btn.classList.remove('loading');
     updateUrlState();
   }
+}
+
+
+/* ── Source analysis panel ───────────────────────────────────────────── */
+function renderSourceAnalysis(sa) {
+  if (!sa || !sa.domain) return '';
+
+  const credColor = sa.credibility >= 70 ? '#16A34A'
+                  : sa.credibility >= 40 ? '#D97706'
+                  : '#DC2626';
+
+  const biasMap = {
+    'left': '◀◀ Left', 'center-left': '◀ Center-left',
+    'center': '● Center', 'center-right': '▶ Center-right',
+    'right': '▶▶ Right', 'unknown': '— Unknown'
+  };
+  const biasLabel = biasMap[sa.bias] || '— Unknown';
+
+  const ageText = sa.domain_age_days > 0
+    ? (sa.domain_age_days >= 365
+        ? Math.floor(sa.domain_age_days / 365) + ' year(s)'
+        : sa.domain_age_days + ' days')
+    : '—';
+
+  const warningHTML = sa.warning
+    ? `<div class="source-warning"><span style="font-size:13px;flex-shrink:0">⚠</span><span>${escHtml(sa.warning)}</span></div>`
+    : '';
+
+  const verifiedHTML = sa.known_source
+    ? `<div class="source-verified"><span class="source-verified-dot"></span>Verified — in credibility database</div>`
+    : `<div class="source-verified">○ Unknown source — estimated from domain analysis</div>`;
+
+  const ageRow = sa.domain_age_days > 0
+    ? `<div class="source-row"><span class="source-key">Domain age</span><span class="source-val">${ageText}</span></div>`
+    : '';
+
+  return `
+    <div class="result-section">
+      <div class="section-title">Source Analysis</div>
+      <div class="source-panel">
+        <div class="source-header">
+          <span class="source-domain">${escHtml(sa.domain)}</span>
+          <span class="source-badge ${sa.category}">${sa.category}</span>
+        </div>
+        <div class="source-body">
+          <div class="source-row">
+            <span class="source-key">Credibility</span>
+            <div class="source-cred-bar">
+              <div class="source-cred-fill" style="width:${sa.credibility}%;background:${credColor}"></div>
+            </div>
+            <span class="source-val" style="color:${credColor};min-width:40px">${sa.credibility}/100</span>
+          </div>
+          <div class="source-row">
+            <span class="source-key">Bias</span>
+            <span class="source-val">${escHtml(biasLabel)}</span>
+          </div>
+          ${ageRow}
+          <div class="source-row">
+            <span class="source-key">Notes</span>
+            <span class="source-notes">${escHtml(sa.notes)}</span>
+          </div>
+          ${verifiedHTML}
+          ${warningHTML}
+        </div>
+      </div>
+    </div>`;
+}
+
+
+/* ── Source-only result renderer ─────────────────────────────────────── */
+function renderSourceOnly(sa) {
+  const credColor = sa.credibility >= 70 ? '#16A34A'
+                  : sa.credibility >= 40 ? '#D97706'
+                  : '#DC2626';
+
+  const categoryIcon = {
+    'mainstream':  '📰', 'tabloid': '🗞️', 'satire': '🎭',
+    'conspiracy':  '⚠️', 'state-media': '🏛️', 'unknown': '🔍'
+  }[sa.category] || '🔍';
+
+  const biasMap = {
+    'left': '◀◀ Left', 'center-left': '◀ Center-left',
+    'center': '● Center', 'center-right': '▶ Center-right',
+    'right': '▶▶ Right', 'unknown': '— Unknown'
+  };
+
+  const ageText = sa.domain_age_days > 0
+    ? (sa.domain_age_days >= 365
+        ? Math.floor(sa.domain_age_days / 365) + ' year(s)'
+        : sa.domain_age_days + ' days')
+    : 'Unknown';
+
+  const warningHTML = sa.warning
+    ? `<div class="source-warning" style="margin-top:16px">
+         <span style="font-size:14px;flex-shrink:0">⚠</span>
+         <span>${escHtml(sa.warning)}</span>
+       </div>`
+    : '';
+
+  const verifiedHTML = sa.known_source
+    ? `<div class="source-verified" style="margin-top:12px">
+         <span class="source-verified-dot"></span>
+         Verified — in credibility database
+       </div>`
+    : `<div class="source-verified" style="margin-top:12px">
+         ○ Unknown source — credibility estimated from domain analysis
+       </div>`;
+
+  const ageRow = sa.domain_age_days > 0
+    ? `<div class="source-row"><span class="source-key">Domain age</span>
+       <span class="source-val">${ageText}</span></div>`
+    : '';
+
+  document.getElementById('result-empty').style.display = 'none';
+  document.getElementById('result-content').style.display = 'block';
+  document.getElementById('result-content').innerHTML = `
+    <div class="source-only-panel">
+      <div class="source-only-header">
+        <div class="source-only-icon">${categoryIcon}</div>
+        <div>
+          <div class="source-only-title">${escHtml(sa.domain)}</div>
+          <div class="source-only-sub">Source credibility analysis — no article detected</div>
+        </div>
+      </div>
+      <div class="source-panel">
+        <div class="source-header">
+          <span class="source-domain">${escHtml(sa.domain)}</span>
+          <span class="source-badge ${sa.category}">${sa.category}</span>
+        </div>
+        <div class="source-body">
+          <div class="source-row">
+            <span class="source-key">Credibility</span>
+            <div class="source-cred-bar">
+              <div class="source-cred-fill" style="width:${sa.credibility}%;background:${credColor}"></div>
+            </div>
+            <span class="source-val" style="color:${credColor};min-width:40px">${sa.credibility}/100</span>
+          </div>
+          <div class="source-row">
+            <span class="source-key">Category</span>
+            <span class="source-val">${sa.category}</span>
+          </div>
+          <div class="source-row">
+            <span class="source-key">Bias</span>
+            <span class="source-val">${escHtml(biasMap[sa.bias] || '— Unknown')}</span>
+          </div>
+          ${ageRow}
+          <div class="source-row">
+            <span class="source-key">Notes</span>
+            <span class="source-notes">${escHtml(sa.notes)}</span>
+          </div>
+          ${verifiedHTML}
+          ${warningHTML}
+        </div>
+      </div>
+      <p style="margin-top:16px;font-size:.83rem;color:var(--text-3);line-height:1.6">
+        💡 This URL appears to be a news source homepage rather than a specific article.
+        To analyze article content, paste the URL of a specific news story.
+      </p>
+    </div>`;
 }
 
 /* ── Keyboard shortcut ────────────────────────────────────────── */

@@ -15,8 +15,11 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-_TIMEOUT = 10 
-_MAX_TEXT_CHARS = 8000  
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+_TIMEOUT = 10  # seconds
+_MAX_TEXT_CHARS = 8000  # cap extracted text to avoid huge payloads
 _USER_AGENT = (
     "Mozilla/5.0 (compatible; TruthLens/1.0; fake-news-detection-research)"
 )
@@ -115,6 +118,63 @@ def validate_url(url: str) -> tuple[bool, str]:
         return False, "Could not parse URL"
 
 
+
+
+def is_homepage_url(url: str) -> bool:
+    """
+    Return True if the URL looks like a news source homepage rather than
+    a specific article.
+
+    Heuristics:
+    - Path is empty, "/" or a single top-level section like "/news", "/world"
+    - No article-like segments (long slugs, numeric IDs, dates in path)
+    """
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        path = parsed.path.rstrip('/')
+
+        # Empty path or root
+        if not path or path == '':
+            return True
+
+        # Split into segments and remove empty strings
+        segments = [s for s in path.split('/') if s]
+
+        # Single short segment with no hyphens/numbers = section page
+        # e.g. /news, /world, /technology, /sport
+        if len(segments) == 1:
+            seg = segments[0]
+            # Article slugs typically have hyphens and are longer
+            if len(seg) < 20 and '-' not in seg and not any(c.isdigit() for c in seg):
+                return True
+
+        # Two segments where second is also short and non-numeric = category
+        # e.g. /news/world, /us/politics
+        if len(segments) == 2:
+            s1, s2 = segments
+            if (len(s1) < 20 and len(s2) < 20
+                    and '-' not in s1 and '-' not in s2
+                    and not any(c.isdigit() for c in s1 + s2)):
+                return True
+
+        # Path contains a year — likely an article
+        if any(s.isdigit() and len(s) == 4 and s.startswith(('19', '20')) for s in segments):
+            return False
+
+        # Long hyphenated slug = article
+        if any(len(s) > 30 and '-' in s for s in segments):
+            return False
+
+        # Path ends with /articles/, /article/, /story/ = article
+        if any(s in ('articles', 'article', 'story', 'stories', 'post', 'posts')
+               for s in segments[:-1]):
+            return False
+
+        return False
+    except Exception:
+        return False
+
 def extract_text_from_url(url: str) -> dict:
     """
     Fetch *url* and extract its article text.
@@ -204,7 +264,13 @@ def extract_text_from_url(url: str) -> dict:
 
     word_count = len(text.split())
 
+    # ------------------------------------------------------------------
     # Listing page detection heuristics
+    # A listing/homepage typically has:
+    #   - Many short sentences (avg < 12 words each)
+    #   - A high ratio of sentences under 8 words
+    #   - Low total word count despite many "sentences"
+    # ------------------------------------------------------------------
     sentences = [s.strip() for s in re.split(r'[.!?]', text) if len(s.strip()) > 3]
     is_likely_listing = False
     listing_warning = ""

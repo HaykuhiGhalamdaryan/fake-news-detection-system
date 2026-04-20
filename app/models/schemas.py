@@ -17,10 +17,10 @@ class AnalysisDetails(BaseModel):
     fake_probability: float
     primary_score: Optional[float]
     secondary_score: Optional[float]
-    tiebreaker_score: Optional[float]   # None if tiebreaker model unavailable
-    model_spread: Optional[float]       # |primary - secondary| — how much models disagreed
-    high_disagreement: bool             # True if spread > 0.35
-    negation_detected: bool             # True if negation correction was applied
+    tiebreaker_score: Optional[float]
+    model_spread: Optional[float]
+    high_disagreement: bool
+    negation_detected: bool
 
 
 class Explanation(BaseModel):
@@ -40,6 +40,27 @@ class FactCheck(BaseModel):
     evidence: List[str]
 
 
+class SourceAnalysis(BaseModel):
+    """Credibility analysis of the news source."""
+    domain: str
+    known_source: bool
+    credibility: int
+    category: str
+    bias: str
+    domain_age_days: int
+    notes: str
+    warning: str
+
+
+class SourceOnlyResponse(BaseModel):
+    """
+    Returned when a news source homepage is submitted (not a specific article).
+    Contains only source analysis — no NLP pipeline is run.
+    """
+    mode: str = "source_only"      # always "source_only" — frontend uses this to detect
+    source_analysis: SourceAnalysis
+
+
 class AnalyzeResponse(BaseModel):
     verdict: str
     confidence: int
@@ -52,4 +73,5 @@ class AnalyzeResponse(BaseModel):
     fact_check: FactCheck
     signals: List[str]
     explanation: Explanation
-    article_warning: Optional[str] = None 
+    article_warning: Optional[str] = None
+    source_analysis: Optional[SourceAnalysis] = None
