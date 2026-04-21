@@ -24,19 +24,12 @@ from __future__ import annotations
 
 import re
 import socket
+import requests
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 from typing import Optional
 
-import requests
-
-# ---------------------------------------------------------------------------
-# Static source database
-# ---------------------------------------------------------------------------
-# Each entry: (credibility 0-100, category, bias, notes)
-
 _SOURCE_DB: dict[str, tuple[int, str, str, str]] = {
-    # ── Mainstream international ──────────────────────────────────────────
     "bbc.com":           (92, "mainstream",   "center",       "BBC — UK public broadcaster, strong editorial standards"),
     "bbc.co.uk":         (92, "mainstream",   "center",       "BBC — UK public broadcaster, strong editorial standards"),
     "reuters.com":       (95, "mainstream",   "center",       "Reuters — international wire service, strict factual reporting"),
@@ -74,7 +67,6 @@ _SOURCE_DB: dict[str, tuple[int, str, str, str]] = {
     "theatlantic.com":   (82, "mainstream",   "center-left",  "The Atlantic — respected US magazine"),
     "wired.com":         (82, "mainstream",   "center",       "Wired — respected technology journalism"),
 
-    # ── Science & fact-checking ───────────────────────────────────────────
     "nature.com":        (97, "mainstream",   "center",       "Nature — top peer-reviewed scientific journal"),
     "science.org":       (97, "mainstream",   "center",       "Science — top peer-reviewed scientific journal"),
     "scientificamerican.com": (90, "mainstream", "center",    "Scientific American — respected science magazine"),
@@ -84,7 +76,6 @@ _SOURCE_DB: dict[str, tuple[int, str, str, str]] = {
     "politifact.com":    (82, "mainstream",   "center",       "PolitiFact — Pulitzer Prize-winning fact-checker"),
     "fullfact.org":      (85, "mainstream",   "center",       "Full Fact — UK independent fact-checker"),
 
-    # ── Tabloid ───────────────────────────────────────────────────────────
     "dailymail.co.uk":   (40, "tabloid",      "right",        "Daily Mail — UK tabloid, frequent sensationalism"),
     "thesun.co.uk":      (35, "tabloid",      "right",        "The Sun — UK tabloid, low factual reliability"),
     "nypost.com":        (45, "tabloid",      "right",        "New York Post — US tabloid"),
@@ -92,13 +83,11 @@ _SOURCE_DB: dict[str, tuple[int, str, str, str]] = {
     "express.co.uk":     (35, "tabloid",      "right",        "Daily Express — UK tabloid, frequent misinformation"),
     "theglobeandmail.com":(72,"mainstream",   "center",       "The Globe and Mail — major Canadian newspaper"),
 
-    # ── Satire ────────────────────────────────────────────────────────────
     "theonion.com":      (10, "satire",       "center",       "The Onion — well-known satire website, not real news"),
     "babylonbee.com":    (10, "satire",       "right",        "Babylon Bee — conservative satire website"),
     "clickhole.com":     (10, "satire",       "center",       "ClickHole — satire website"),
     "waterfordwhispersnews.com": (10, "satire", "center",     "Waterford Whispers — Irish satire website"),
 
-    # ── Conspiracy / Low credibility ──────────────────────────────────────
     "infowars.com":      (2,  "conspiracy",   "right",        "InfoWars — known misinformation, conspiracy theories"),
     "naturalnews.com":   (3,  "conspiracy",   "right",        "Natural News — known health misinformation"),
     "breitbart.com":     (20, "conspiracy",   "right",        "Breitbart — far-right, frequent misinformation"),
@@ -108,7 +97,6 @@ _SOURCE_DB: dict[str, tuple[int, str, str, str]] = {
     "empirenews.net":    (1,  "conspiracy",   "unknown",      "Empire News — known fake news satire site"),
     "thegatewaypundit.com": (10, "conspiracy", "right",       "The Gateway Pundit — frequent misinformation"),
 
-    # ── State media ───────────────────────────────────────────────────────
     "rt.com":            (20, "state-media",  "unknown",      "RT (Russia Today) — Russian state media, known propaganda"),
     "sputniknews.com":   (15, "state-media",  "unknown",      "Sputnik — Russian state media"),
     "xinhuanet.com":     (25, "state-media",  "unknown",      "Xinhua — Chinese state news agency"),
@@ -118,20 +106,13 @@ _SOURCE_DB: dict[str, tuple[int, str, str, str]] = {
     "rferl.org":         (70, "state-media",  "center",       "Radio Free Europe — US government-funded, covers Eastern Europe"),
 }
 
-# ---------------------------------------------------------------------------
-# Suspicious TLD list — these are often used for low-quality sites
-# ---------------------------------------------------------------------------
 _SUSPICIOUS_TLDS = {
     ".xyz", ".top", ".click", ".link", ".info", ".biz",
-    ".tk", ".ml", ".ga", ".cf", ".gq",  # free TLDs often used for spam
-    ".news",  # frequently registered for fake news sites
+    ".tk", ".ml", ".ga", ".cf", ".gq",  
+    ".news",
 }
 
 _TRUSTED_TLDS = {".com", ".org", ".net", ".gov", ".edu", ".co.uk", ".ac.uk"}
-
-# ---------------------------------------------------------------------------
-# Domain extraction
-# ---------------------------------------------------------------------------
 
 def extract_domain(url: str) -> str:
     """Extract the base domain from a URL, stripping www."""
@@ -143,11 +124,6 @@ def extract_domain(url: str) -> str:
         return domain
     except Exception:
         return ""
-
-
-# ---------------------------------------------------------------------------
-# WHOIS-based domain analysis (fallback for unknown domains)
-# ---------------------------------------------------------------------------
 
 def _analyze_domain_whois(domain: str) -> dict:
     """
@@ -163,7 +139,6 @@ def _analyze_domain_whois(domain: str) -> dict:
         "notes": "",
     }
 
-    # Check if domain resolves at all
     try:
         socket.setdefaulttimeout(3)
         socket.gethostbyname(domain)
@@ -172,13 +147,10 @@ def _analyze_domain_whois(domain: str) -> dict:
         result["notes"] = "Domain does not resolve — may not exist"
         return result
 
-    # Check TLD
     tld = "." + domain.split(".")[-1]
     if tld in _SUSPICIOUS_TLDS:
         result["suspicious_tld"] = True
 
-    # Try RDAP (Registration Data Access Protocol) — modern replacement for WHOIS
-    # Uses IANA's RDAP bootstrap service
     try:
         tld_clean = domain.split(".")[-1]
         rdap_url = f"https://rdap.org/domain/{domain}"
@@ -187,7 +159,6 @@ def _analyze_domain_whois(domain: str) -> dict:
         if r.status_code == 200:
             data = r.json()
 
-            # Extract registration date
             for event in data.get("events", []):
                 if event.get("eventAction") == "registration":
                     date_str = event.get("eventDate", "")
@@ -200,7 +171,6 @@ def _analyze_domain_whois(domain: str) -> dict:
                     except Exception:
                         pass
 
-            # Check for privacy protection in nameservers or entities
             entities = data.get("entities", [])
             for entity in entities:
                 vcard = entity.get("vcardArray", [])
@@ -211,21 +181,16 @@ def _analyze_domain_whois(domain: str) -> dict:
                     result["privacy_protected"] = True
 
     except Exception:
-        pass  # RDAP failed — that is fine, we still have other signals
+        pass  
 
     return result
-
-
-# ---------------------------------------------------------------------------
-# Score calculation for unknown domains
-# ---------------------------------------------------------------------------
 
 def _score_unknown_domain(domain: str, whois_data: dict) -> tuple[int, str, str]:
     """
     Calculate a credibility score for an unknown domain based on
     domain analysis signals. Returns (score, category, warning).
     """
-    score = 50  # neutral starting point
+    score = 50  
     warnings = []
     notes_parts = []
 
@@ -244,7 +209,7 @@ def _score_unknown_domain(domain: str, whois_data: dict) -> tuple[int, str, str]
         notes_parts.append(f"Domain registered {age} days ago")
     else:
         years = age // 365
-        score += min(years * 3, 15)  # up to +15 for established domains
+        score += min(years * 3, 15) 
         notes_parts.append(f"Established domain — {years} year(s) old")
 
     if whois_data.get("suspicious_tld"):
@@ -274,16 +239,6 @@ def _score_unknown_domain(domain: str, whois_data: dict) -> tuple[int, str, str]
     notes = ". ".join(notes_parts) if notes_parts else "Unknown source — no credibility data available"
 
     return score, category, warning
-
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# SQL cache helpers
-# ---------------------------------------------------------------------------
 
 def _build_result_from_static(domain: str) -> dict:
     """Build response dict from the static database entry."""
@@ -339,11 +294,6 @@ def _build_result_from_whois(domain: str, whois_data: dict,
         "warning":         warning,
     }
 
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
 def analyze_source(url: str, db=None) -> dict:
     """
     Analyze the credibility of a news source from its URL.
@@ -383,11 +333,9 @@ def analyze_source(url: str, db=None) -> dict:
             "warning":         "",
         }
 
-    # ── Layer 1: static database (instant, no DB needed) ─────────────────
     if domain in _SOURCE_DB:
         return _build_result_from_static(domain)
 
-    # ── Layer 2: SQL cache (instant if previously seen) ───────────────────
     if db is not None:
         try:
             from app.database.models import DomainCache
@@ -397,14 +345,12 @@ def analyze_source(url: str, db=None) -> dict:
             if cached:
                 return _build_result_from_cache(cached)
         except Exception:
-            pass  # cache lookup failed — continue to live query
+            pass  
 
-    # ── Layer 3: live WHOIS query (slow, runs only once per domain) ───────
     whois_data = _analyze_domain_whois(domain)
     score, category, warning = _score_unknown_domain(domain, whois_data)
     result = _build_result_from_whois(domain, whois_data, score, category, warning)
 
-    # ── Save to SQL cache so next request is instant ──────────────────────
     if db is not None:
         try:
             from app.database.models import DomainCache
@@ -419,6 +365,6 @@ def analyze_source(url: str, db=None) -> dict:
             db.add(cache_entry)
             db.commit()
         except Exception:
-            db.rollback()  # cache write failed — not critical, result is still returned
+            db.rollback() 
 
     return result
