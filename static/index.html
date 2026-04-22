@@ -121,17 +121,16 @@ nav { display: flex; gap: 4px; }
    PAGE 1 — ANALYZER
 ═══════════════════════════════════════════════════════════════ */
 .analyzer-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
-  align-items: start;
 }
-@media (max-width: 800px) { .analyzer-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .analyzer-grid { grid-template-columns: 1fr; } }
 
 /* Input panel */
 .textarea-wrap { position: relative; }
 #claim-input {
-  width: 100%; min-height: 200px;
+  width: 100%; min-height: 130px;
   padding: 16px; padding-bottom: 52px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
@@ -497,44 +496,30 @@ nav { display: flex; gap: 4px; }
   margin-bottom: 14px;
 }
 
-
 /* ── Input mode tabs ───────────────────────────────────────────── */
-.input-tabs {
-  display: flex; gap: 6px; margin-bottom: 14px;
-}
+.input-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
 .input-tab {
   background: var(--bg); border: 1.5px solid var(--border);
   border-radius: 8px; padding: 8px 16px;
   font-size: .85rem; font-weight: 500; color: var(--text-2);
   transition: all .15s; cursor: pointer;
 }
-.input-tab.active {
-  background: var(--accent-bg); border-color: var(--accent);
-  color: var(--accent);
-}
+.input-tab.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
 .input-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
 
 /* ── URL input ─────────────────────────────────────────────────── */
-.url-input-wrap {
-  display: flex; gap: 10px; align-items: stretch;
-}
+.url-input-wrap { display: flex; gap: 10px; align-items: stretch; }
 #url-input {
   flex: 1; padding: 12px 16px;
   border: 1.5px solid var(--border); border-radius: var(--radius);
   font-family: var(--ff-body); font-size: .95rem;
   color: var(--text); background: var(--surface);
-  outline: none; transition: border-color .2s, box-shadow .2s;
-  min-width: 0;
+  outline: none; transition: border-color .2s, box-shadow .2s; min-width: 0;
 }
-#url-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(26,77,143,.1);
-}
+#url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,77,143,.1); }
 #url-input::placeholder { color: var(--text-3); }
 #url-input.invalid { border-color: #FECACA; box-shadow: 0 0 0 3px rgba(220,38,38,.08); }
-.url-hint {
-  margin-top: 10px; font-size: .82rem; color: var(--text-3); line-height: 1.5;
-}
+.url-hint { margin-top: 10px; font-size: .82rem; color: var(--text-3); line-height: 1.5; }
 .url-meta {
   margin-top: 12px; background: var(--accent-bg);
   border: 1px solid #C7D9F5; border-radius: 8px;
@@ -543,40 +528,27 @@ nav { display: flex; gap: 4px; }
 }
 .url-meta strong { color: var(--text); display: block; margin-bottom: 2px; }
 
-
 /* ── Article warning banner ────────────────────────────────────── */
 .article-warning {
   display: flex; align-items: flex-start; gap: 10px;
   background: #FFFBEB; border: 1px solid #FCD34D;
   border-left: 3px solid #F59E0B;
   border-radius: 8px; padding: 12px 14px;
-  font-size: .83rem; color: #92400E; line-height: 1.5;
-  margin-bottom: 0;
+  font-size: .83rem; color: #92400E; line-height: 1.5; margin-bottom: 0;
 }
 .article-warning-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
 
-
-/* ── Source analysis panel ─────────────────────────────────────────────── */
-.source-panel {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
+/* ── Source analysis panel ─────────────────────────────────────── */
+.source-panel { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .source-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 18px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  padding: 12px 18px; background: var(--bg); border-bottom: 1px solid var(--border);
 }
-.source-domain {
-  font-size: .9rem; font-weight: 600; color: var(--text);
-  font-family: var(--ff-mono);
-}
+.source-domain { font-size: .9rem; font-weight: 600; color: var(--text); font-family: var(--ff-mono); }
 .source-badge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 10px; border-radius: 6px;
-  font-size: .75rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: .05em;
+  font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
 }
 .source-badge.mainstream  { background: #DCFCE7; color: #166534; }
 .source-badge.tabloid     { background: #FEF3C7; color: #92400E; }
@@ -587,43 +559,29 @@ nav { display: flex; gap: 4px; }
 .source-body { padding: 14px 18px; }
 .source-row  { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .source-row:last-child { margin-bottom: 0; }
-.source-key  { font-size: .75rem; color: var(--text-3); text-transform: uppercase;
-               letter-spacing: .05em; font-weight: 500; min-width: 100px; flex-shrink: 0; }
+.source-key  { font-size: .75rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; font-weight: 500; min-width: 100px; flex-shrink: 0; }
 .source-val  { font-size: .85rem; color: var(--text); font-weight: 500; }
 .source-notes { font-size: .82rem; color: var(--text-2); line-height: 1.5; }
 .source-cred-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; flex: 1; }
 .source-cred-fill { height: 100%; border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
 .source-warning {
   display: flex; align-items: flex-start; gap: 8px;
-  background: #FEF2F2; border: 1px solid #FECACA;
-  border-left: 3px solid #EF4444;
+  background: #FEF2F2; border: 1px solid #FECACA; border-left: 3px solid #EF4444;
   border-radius: 8px; padding: 10px 14px;
-  font-size: .82rem; color: #991B1B; line-height: 1.5;
-  margin-top: 10px;
+  font-size: .82rem; color: #991B1B; line-height: 1.5; margin-top: 10px;
 }
-.source-verified {
-  display: flex; align-items: center; gap: 6px;
-  font-size: .76rem; color: var(--text-3); margin-top: 8px;
-}
+.source-verified { display: flex; align-items: center; gap: 6px; font-size: .76rem; color: var(--text-3); margin-top: 8px; }
 .source-verified-dot { width: 7px; height: 7px; border-radius: 50%; background: #16A34A; flex-shrink: 0; }
 
-
-/* ── Source-only result panel ──────────────────────────────────────────── */
-.source-only-panel {
-  padding: 28px 24px;
-}
-.source-only-header {
-  display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
-}
+/* ── Source-only result panel ──────────────────────────────────── */
+.source-only-panel { padding: 28px 24px; }
+.source-only-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .source-only-icon {
   width: 48px; height: 48px; border-radius: 12px;
   background: var(--accent-bg); display: flex; align-items: center;
   justify-content: center; font-size: 22px; flex-shrink: 0;
 }
-.source-only-title {
-  font-family: var(--ff-display); font-size: 1.2rem; font-weight: 700;
-  color: var(--text); margin-bottom: 2px;
-}
+.source-only-title { font-family: var(--ff-display); font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
 .source-only-sub { font-size: .85rem; color: var(--text-2); }
 
 /* ── Utility ───────────────────────────────────────────────────── */
@@ -643,10 +601,10 @@ nav { display: flex; gap: 4px; }
       TruthLens
     </div>
     <nav>
-      <button class="nav-btn active" data-page="analyzer" onclick="navigate('analyzer')">Analyzer</button>
-      <button class="nav-btn" data-page="history"  onclick="navigate('history')">History</button>
+      <button class="nav-btn active" data-page="analyzer"  onclick="navigate('analyzer')">Analyzer</button>
+      <button class="nav-btn" data-page="history"   onclick="navigate('history')">History</button>
       <button class="nav-btn" data-page="analytics" onclick="navigate('analytics')">Analytics</button>
-      <button class="nav-btn" data-page="about"    onclick="navigate('about')">About</button>
+      <button class="nav-btn" data-page="about"     onclick="navigate('about')">About</button>
     </nav>
   </div>
 </header>
@@ -664,11 +622,9 @@ nav { display: flex; gap: 4px; }
 
       <!-- Input -->
       <div class="input-panel">
-
-        <!-- Mode tabs -->
         <div class="input-tabs">
           <button class="input-tab active" id="tab-text" onclick="switchTab('text')">✏️ Paste Text</button>
-          <button class="input-tab" id="tab-url"  onclick="switchTab('url')">🔗 Analyze URL</button>
+          <button class="input-tab" id="tab-url" onclick="switchTab('url')">🔗 Analyze URL</button>
         </div>
 
         <!-- Text mode -->
@@ -711,16 +667,19 @@ nav { display: flex; gap: 4px; }
           <div class="url-hint" id="url-hint">Paste any news article URL — the text will be extracted and analyzed automatically.</div>
           <div class="url-meta" id="url-meta" style="display:none"></div>
         </div>
-
       </div>
 
       <!-- Result -->
-      <div class="card" id="result-card">
-        <div class="result-empty" id="result-empty">
-          <div class="result-empty-icon">📋</div>
-          <p>Your analysis results will appear here.</p>
+      <div>
+        <div class="card" id="result-card">
+          <div class="result-empty" id="result-empty">
+            <div class="result-empty-icon">📋</div>
+            <p>Your analysis results will appear here.</p>
+          </div>
+          <div id="result-content" style="display:none"></div>
         </div>
-        <div id="result-content" style="display:none"></div>
+        <!-- Trusted sources suggestion (shown for Fake / Likely Fake / Uncertain) -->
+        <div id="suggestion-box" style="display:none"></div>
       </div>
 
     </div>
@@ -769,6 +728,8 @@ nav { display: flex; gap: 4px; }
     <div id="analytics-content">
       <div class="loading-overlay"><div class="big-spinner"></div><span>Loading analytics…</span></div>
     </div>
+    <!-- Trusted Sources section -->
+    <div id="trusted-sources-content" style="margin-top:32px"></div>
   </div>
 </main>
 
@@ -786,52 +747,16 @@ nav { display: flex; gap: 4px; }
         <div class="card card-body prose">
           <h2>What is TruthLens?</h2>
           <p>TruthLens is a fake news detection system that combines machine learning models, semantic fact-checking, and linguistic analysis to assess the credibility of news claims and articles.</p>
-          <p>Built as a Bachelor's thesis project, it uses an ensemble of two fine-tuned RoBERTa models alongside Wikipedia, NewsAPI, and DuckDuckGo for multi-source evidence retrieval.</p>
+          <p>Built as a Bachelor's thesis project, it uses an ensemble of fine-tuned RoBERTa models alongside Wikipedia, NewsAPI, and DuckDuckGo for multi-source evidence retrieval.</p>
 
           <h2>How It Works</h2>
           <div class="pipeline-steps">
-            <div class="step">
-              <div class="step-num">1</div>
-              <div class="step-content">
-                <h3>Text Chunking</h3>
-                <p>Long articles are split into overlapping 300-word chunks so no content is silently truncated by the model's 512-token limit.</p>
-              </div>
-            </div>
-            <div class="step">
-              <div class="step-num">2</div>
-              <div class="step-content">
-                <h3>ML Ensemble Scoring</h3>
-                <p>Two fine-tuned RoBERTa models (hamzab + jy46604790) score each chunk independently. Scores are aggregated with position and confidence weighting.</p>
-              </div>
-            </div>
-            <div class="step">
-              <div class="step-num">3</div>
-              <div class="step-content">
-                <h3>Text Feature Analysis</h3>
-                <p>8 surface-level signals are detected: ALL CAPS, excessive punctuation, clickbait phrases, hyperbolic language, vague attribution, and more.</p>
-              </div>
-            </div>
-            <div class="step">
-              <div class="step-num">4</div>
-              <div class="step-content">
-                <h3>Multi-Source Fact Checking</h3>
-                <p>Wikipedia, NewsAPI, and DuckDuckGo are queried in parallel. Sentence Transformers compute semantic similarity between the claim and found evidence.</p>
-              </div>
-            </div>
-            <div class="step">
-              <div class="step-num">5</div>
-              <div class="step-content">
-                <h3>Contradiction Detection</h3>
-                <p>The claim's negation is also scored against the evidence. Geographic mismatch penalties catch wrong-entity matches (e.g., "Armenia" city vs. country).</p>
-              </div>
-            </div>
-            <div class="step">
-              <div class="step-num">6</div>
-              <div class="step-content">
-                <h3>Hybrid Verdict</h3>
-                <p>A two-track decision engine combines all signals: fact-check driven for verifiable claims, ML-driven for opinion and manipulation detection.</p>
-              </div>
-            </div>
+            <div class="step"><div class="step-num">1</div><div class="step-content"><h3>Text Chunking</h3><p>Long articles are split into overlapping 300-word chunks so no content is silently truncated by the model's 512-token limit.</p></div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-content"><h3>ML Ensemble Scoring</h3><p>Three fine-tuned transformer models score each chunk. Scores are weighted 50/35/15 and aggregated into a single fake_probability.</p></div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-content"><h3>Text Feature Analysis</h3><p>8 surface-level signals are detected: ALL CAPS, excessive punctuation, clickbait phrases, hyperbolic language, vague attribution, and more.</p></div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-content"><h3>Multi-Source Fact Checking</h3><p>Wikipedia, NewsAPI, and DuckDuckGo are queried in parallel. Sentence Transformers compute semantic similarity between the claim and found evidence.</p></div></div>
+            <div class="step"><div class="step-num">5</div><div class="step-content"><h3>Source Credibility</h3><p>The article's domain is checked against a verified database of 80+ sources, with WHOIS fallback for unknown domains.</p></div></div>
+            <div class="step"><div class="step-num">6</div><div class="step-content"><h3>Hybrid Verdict</h3><p>A two-track decision engine combines all signals into a final verdict: True, Likely True, Uncertain, Likely Fake, or Fake.</p></div></div>
           </div>
 
           <h2>Verdict Scale</h2>
@@ -853,11 +778,10 @@ nav { display: flex; gap: 4px; }
             <div class="tech-item"><span class="tech-icon">🤖</span><div><div class="tech-name">Transformers</div><div class="tech-desc">RoBERTa fake-news models</div></div></div>
             <div class="tech-item"><span class="tech-icon">🔍</span><div><div class="tech-name">Sentence Transformers</div><div class="tech-desc">Semantic similarity scoring</div></div></div>
             <div class="tech-item"><span class="tech-icon">📰</span><div><div class="tech-name">NewsAPI + Wikipedia</div><div class="tech-desc">Multi-source fact checking</div></div></div>
-            <div class="tech-item"><span class="tech-icon">🗄️</span><div><div class="tech-name">PostgreSQL</div><div class="tech-desc">Analysis result storage</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🗄️</span><div><div class="tech-name">SQLite + SQLAlchemy</div><div class="tech-desc">Analysis result storage</div></div></div>
             <div class="tech-item"><span class="tech-icon">🎨</span><div><div class="tech-name">HTML / CSS / JS</div><div class="tech-desc">Vanilla frontend (this page)</div></div></div>
           </div>
         </div>
-
         <div class="card card-body">
           <div class="chart-title">Limitations</div>
           <div class="prose">
@@ -933,6 +857,7 @@ async function analyzeText() {
   document.getElementById('result-content').innerHTML =
     '<div class="loading-overlay"><div class="big-spinner"></div><span>Analyzing…</span></div>';
   document.getElementById('result-content').style.display = 'block';
+  document.getElementById('suggestion-box').style.display = 'none';
 
   try {
     const res = await fetch(API + '/analyze', {
@@ -943,6 +868,7 @@ async function analyzeText() {
     if (!res.ok) throw new Error('API error ' + res.status);
     const d = await res.json();
     renderResult(d);
+    fetchAndRenderSuggestion(d.verdict);
   } catch (e) {
     showToast('Could not connect to API. Is the server running?', true);
     document.getElementById('result-content').style.display = 'none';
@@ -1037,8 +963,7 @@ let historyPage   = 0;
 const HISTORY_LIMIT = 10;
 
 function filterHistory(verdict, btn) {
-  historyFilter = verdict;
-  historyPage   = 0;
+  historyFilter = verdict; historyPage = 0;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   loadHistory();
@@ -1090,7 +1015,6 @@ function renderHistory(items) {
     </div>
   `).join('');
 
-  // Pagination
   const pg = document.getElementById('pagination');
   pg.innerHTML = `
     <button class="page-btn" onclick="prevPage()" ${historyPage===0?'disabled':''}>← Prev</button>
@@ -1134,8 +1058,9 @@ async function loadAnalytics() {
     renderAnalytics(d);
   } catch {
     document.getElementById('analytics-content').innerHTML =
-      '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Could not load analytics. Is the API running?</p></div>';
+      '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Could not load analytics.</p></div>';
   }
+  loadTrustedSources();
 }
 
 function renderAnalytics(d) {
@@ -1143,58 +1068,29 @@ function renderAnalytics(d) {
   const fakeRate = total ? ((d.fake_count/total)*100).toFixed(1) : 0;
   const realRate = total ? ((d.real_count/total)*100).toFixed(1) : 0;
 
-  // Donut segments
   const donutData = [
-    { label:'Fake',    val: d.fake_count||0,   color:'#DC2626' },
-    { label:'Real',    val: d.real_count||0,   color:'#16A34A' },
-    { label:'Other',   val: Math.max(0,(d.total_analyses||0)-((d.fake_count||0)+(d.real_count||0))), color:'#D97706' },
+    { label:'Fake',  val: d.fake_count||0,  color:'#DC2626' },
+    { label:'Real',  val: d.real_count||0,  color:'#16A34A' },
+    { label:'Other', val: Math.max(0,(d.total_analyses||0)-((d.fake_count||0)+(d.real_count||0))), color:'#D97706' },
   ];
 
   document.getElementById('analytics-content').innerHTML = `
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">📊</div>
-        <div class="stat-value">${d.total_analyses||0}</div>
-        <div class="stat-label">Total Analyses</div>
-        <div class="stat-sub">+${d.analyses_today||0} today</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">🔴</div>
-        <div class="stat-value">${d.fake_count||0}</div>
-        <div class="stat-label">Fake Detected</div>
-        <div class="stat-sub">${fakeRate}% of total</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">✅</div>
-        <div class="stat-value">${d.real_count||0}</div>
-        <div class="stat-label">Real Verified</div>
-        <div class="stat-sub">${realRate}% of total</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">⚠️</div>
-        <div class="stat-value">${d.high_risk||0}</div>
-        <div class="stat-label">High Risk</div>
-        <div class="stat-sub">${d.medium_risk||0} medium, ${d.low_risk||0} low</div>
-      </div>
+      <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value">${d.total_analyses||0}</div><div class="stat-label">Total Analyses</div><div class="stat-sub">+${d.analyses_today||0} today</div></div>
+      <div class="stat-card"><div class="stat-icon">🔴</div><div class="stat-value">${d.fake_count||0}</div><div class="stat-label">Fake Detected</div><div class="stat-sub">${fakeRate}% of total</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value">${d.real_count||0}</div><div class="stat-label">Real Verified</div><div class="stat-sub">${realRate}% of total</div></div>
+      <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value">${d.high_risk||0}</div><div class="stat-label">High Risk</div><div class="stat-sub">${d.medium_risk||0} medium, ${d.low_risk||0} low</div></div>
     </div>
-
     <div class="analytics-grid">
       <div class="chart-card">
         <div class="chart-title">Verdict Distribution</div>
         <div class="donut-wrap">
-          <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
-            ${buildDonut(donutData)}
-          </svg>
+          <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">${buildDonut(donutData)}</svg>
           <div class="donut-legend">
-            ${donutData.map(item=>`
-              <div class="legend-item">
-                <span class="legend-dot" style="background:${item.color}"></span>
-                ${item.label}: <strong>${item.val}</strong>
-              </div>`).join('')}
+            ${donutData.map(item=>`<div class="legend-item"><span class="legend-dot" style="background:${item.color}"></span>${item.label}: <strong>${item.val}</strong></div>`).join('')}
           </div>
         </div>
       </div>
-
       <div class="chart-card">
         <div class="chart-title">Risk Distribution</div>
         <div class="bar-chart">
@@ -1203,7 +1099,6 @@ function renderAnalytics(d) {
           ${buildBar('LOW',    d.low_risk||0,    total, '#16A34A')}
         </div>
       </div>
-
       <div class="chart-card">
         <div class="chart-title">Average Scores</div>
         <div class="metric-list">
@@ -1213,7 +1108,6 @@ function renderAnalytics(d) {
           <div class="metric-row"><span class="metric-name">Analyses Today</span><span class="metric-value">${d.analyses_today||0}</span></div>
         </div>
       </div>
-
       <div class="chart-card">
         <div class="chart-title">Risk Breakdown</div>
         <div class="bar-chart">
@@ -1228,33 +1122,20 @@ function renderAnalytics(d) {
 
 function buildBar(label, val, total, color) {
   const pct = total ? Math.round((val/total)*100) : 0;
-  return `
-    <div class="bar-row">
-      <span class="bar-label">${label}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      <span class="bar-count">${val}</span>
-    </div>`;
+  return `<div class="bar-row"><span class="bar-label">${label}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="bar-count">${val}</span></div>`;
 }
 
 function buildDonut(data) {
   const total = data.reduce((s,d)=>s+d.val,0) || 1;
-  const r = 40, cx = 55, cy = 55;
-  const circ = 2 * Math.PI * r;
-  let offset = 0;
-  let paths = '';
+  const r = 40, cx = 55, cy = 55, circ = 2 * Math.PI * r;
+  let offset = 0, paths = '';
   for (const item of data) {
-    const frac = item.val / total;
-    const dash = frac * circ;
-    paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
-      stroke="${item.color}" stroke-width="18"
-      stroke-dasharray="${dash} ${circ - dash}"
-      stroke-dashoffset="${-offset}"
-      transform="rotate(-90 ${cx} ${cy})"/>`;
+    const dash = (item.val / total) * circ;
+    paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${item.color}" stroke-width="18" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
     offset += dash;
   }
   return paths;
 }
-
 
 /* ── Input mode tabs ──────────────────────────────────────────── */
 function switchTab(mode) {
@@ -1288,6 +1169,7 @@ async function analyzeURL() {
   document.getElementById('result-content').innerHTML =
     '<div class="loading-overlay"><div class="big-spinner"></div><span>Fetching article…</span></div>';
   document.getElementById('result-content').style.display = 'block';
+  document.getElementById('suggestion-box').style.display = 'none';
 
   try {
     const res = await fetch(API + '/analyze-url', {
@@ -1300,17 +1182,16 @@ async function analyzeURL() {
       throw new Error(err.detail || 'API error ' + res.status);
     }
     const d = await res.json();
-    // Source-only mode — homepage or news source URL
     if (d.mode === 'source_only') {
       renderSourceOnly(d.source_analysis);
       return;
     }
-    // Article mode — show meta + full result
     const meta = document.getElementById('url-meta');
     meta.innerHTML = '<strong>Article extracted successfully</strong>' +
       ' — <a href="' + escHtml(url) + '" target="_blank" style="color:var(--accent)">View source</a>';
     meta.style.display = 'block';
     renderResult(d);
+    fetchAndRenderSuggestion(d.verdict);
   } catch (e) {
     showToast(e.message || 'Could not analyze URL.', true);
     document.getElementById('result-content').style.display = 'none';
@@ -1321,39 +1202,21 @@ async function analyzeURL() {
   }
 }
 
-
-/* ── Source analysis panel ───────────────────────────────────────────── */
+/* ── Source analysis panel ────────────────────────────────────── */
 function renderSourceAnalysis(sa) {
   if (!sa || !sa.domain) return '';
-
-  const credColor = sa.credibility >= 70 ? '#16A34A'
-                  : sa.credibility >= 40 ? '#D97706'
-                  : '#DC2626';
-
-  const biasMap = {
-    'left': '◀◀ Left', 'center-left': '◀ Center-left',
-    'center': '● Center', 'center-right': '▶ Center-right',
-    'right': '▶▶ Right', 'unknown': '— Unknown'
-  };
-  const biasLabel = biasMap[sa.bias] || '— Unknown';
-
-  const ageText = sa.domain_age_days > 0
-    ? (sa.domain_age_days >= 365
-        ? Math.floor(sa.domain_age_days / 365) + ' year(s)'
-        : sa.domain_age_days + ' days')
-    : '—';
-
-  const warningHTML = sa.warning
-    ? `<div class="source-warning"><span style="font-size:13px;flex-shrink:0">⚠</span><span>${escHtml(sa.warning)}</span></div>`
-    : '';
-
+  const credColor = sa.credibility >= 70 ? '#16A34A' : sa.credibility >= 40 ? '#D97706' : '#DC2626';
+  const biasMap = { 'left':'◀◀ Left','center-left':'◀ Center-left','center':'● Center','center-right':'▶ Center-right','right':'▶▶ Right','unknown':'— Unknown' };
+  const ageText = sa.domain_age_days > 0 ? (sa.domain_age_days >= 365 ? Math.floor(sa.domain_age_days/365)+' year(s)' : sa.domain_age_days+' days') : '—';
+  const warningHTML = sa.warning ? `<div class="source-warning"><span style="font-size:13px;flex-shrink:0">⚠</span><span>${escHtml(sa.warning)}</span></div>` : '';
   const verifiedHTML = sa.known_source
     ? `<div class="source-verified"><span class="source-verified-dot"></span>Verified — in credibility database</div>`
     : `<div class="source-verified">○ Unknown source — estimated from domain analysis</div>`;
-
-  const ageRow = sa.domain_age_days > 0
-    ? `<div class="source-row"><span class="source-key">Domain age</span><span class="source-val">${ageText}</span></div>`
+  const sourcesHTML = (sa.rating_sources && sa.rating_sources.length > 0)
+    ? `<div class="source-row" style="margin-top:6px"><span class="source-key">Based on</span><span class="source-notes">${sa.rating_sources.map(s=>escHtml(s)).join(' &nbsp;·&nbsp; ')}</span></div>`
     : '';
+  const ageRow = sa.domain_age_days > 0
+    ? `<div class="source-row"><span class="source-key">Domain age</span><span class="source-val">${ageText}</span></div>` : '';
 
   return `
     <div class="result-section">
@@ -1366,71 +1229,33 @@ function renderSourceAnalysis(sa) {
         <div class="source-body">
           <div class="source-row">
             <span class="source-key">Credibility</span>
-            <div class="source-cred-bar">
-              <div class="source-cred-fill" style="width:${sa.credibility}%;background:${credColor}"></div>
-            </div>
+            <div class="source-cred-bar"><div class="source-cred-fill" style="width:${sa.credibility}%;background:${credColor}"></div></div>
             <span class="source-val" style="color:${credColor};min-width:40px">${sa.credibility}/100</span>
           </div>
-          <div class="source-row">
-            <span class="source-key">Bias</span>
-            <span class="source-val">${escHtml(biasLabel)}</span>
-          </div>
+          <div class="source-row"><span class="source-key">Bias</span><span class="source-val">${escHtml(biasMap[sa.bias]||'— Unknown')}</span></div>
           ${ageRow}
-          <div class="source-row">
-            <span class="source-key">Notes</span>
-            <span class="source-notes">${escHtml(sa.notes)}</span>
-          </div>
+          <div class="source-row"><span class="source-key">Notes</span><span class="source-notes">${escHtml(sa.notes)}</span></div>
           ${verifiedHTML}
+          ${sourcesHTML}
           ${warningHTML}
         </div>
       </div>
     </div>`;
 }
 
-
-/* ── Source-only result renderer ─────────────────────────────────────── */
+/* ── Source-only result renderer ──────────────────────────────── */
 function renderSourceOnly(sa) {
-  const credColor = sa.credibility >= 70 ? '#16A34A'
-                  : sa.credibility >= 40 ? '#D97706'
-                  : '#DC2626';
-
-  const categoryIcon = {
-    'mainstream':  '📰', 'tabloid': '🗞️', 'satire': '🎭',
-    'conspiracy':  '⚠️', 'state-media': '🏛️', 'unknown': '🔍'
-  }[sa.category] || '🔍';
-
-  const biasMap = {
-    'left': '◀◀ Left', 'center-left': '◀ Center-left',
-    'center': '● Center', 'center-right': '▶ Center-right',
-    'right': '▶▶ Right', 'unknown': '— Unknown'
-  };
-
-  const ageText = sa.domain_age_days > 0
-    ? (sa.domain_age_days >= 365
-        ? Math.floor(sa.domain_age_days / 365) + ' year(s)'
-        : sa.domain_age_days + ' days')
-    : 'Unknown';
-
-  const warningHTML = sa.warning
-    ? `<div class="source-warning" style="margin-top:16px">
-         <span style="font-size:14px;flex-shrink:0">⚠</span>
-         <span>${escHtml(sa.warning)}</span>
-       </div>`
-    : '';
-
+  const credColor = sa.credibility >= 70 ? '#16A34A' : sa.credibility >= 40 ? '#D97706' : '#DC2626';
+  const categoryIcon = { 'mainstream':'📰','tabloid':'🗞️','satire':'🎭','conspiracy':'⚠️','state-media':'🏛️','unknown':'🔍' }[sa.category] || '🔍';
+  const biasMap = { 'left':'◀◀ Left','center-left':'◀ Center-left','center':'● Center','center-right':'▶ Center-right','right':'▶▶ Right','unknown':'— Unknown' };
+  const ageText = sa.domain_age_days > 0 ? (sa.domain_age_days >= 365 ? Math.floor(sa.domain_age_days/365)+' year(s)' : sa.domain_age_days+' days') : 'Unknown';
+  const warningHTML = sa.warning ? `<div class="source-warning" style="margin-top:16px"><span style="font-size:14px;flex-shrink:0">⚠</span><span>${escHtml(sa.warning)}</span></div>` : '';
   const verifiedHTML = sa.known_source
-    ? `<div class="source-verified" style="margin-top:12px">
-         <span class="source-verified-dot"></span>
-         Verified — in credibility database
-       </div>`
-    : `<div class="source-verified" style="margin-top:12px">
-         ○ Unknown source — credibility estimated from domain analysis
-       </div>`;
-
-  const ageRow = sa.domain_age_days > 0
-    ? `<div class="source-row"><span class="source-key">Domain age</span>
-       <span class="source-val">${ageText}</span></div>`
-    : '';
+    ? `<div class="source-verified" style="margin-top:12px"><span class="source-verified-dot"></span>Verified — in credibility database</div>`
+    : `<div class="source-verified" style="margin-top:12px">○ Unknown source — credibility estimated from domain analysis</div>`;
+  const sourcesRowHTML = (sa.rating_sources && sa.rating_sources.length > 0)
+    ? `<div class="source-row" style="margin-top:6px"><span class="source-key">Based on</span><span class="source-notes">${sa.rating_sources.map(s=>escHtml(s)).join(' &nbsp;·&nbsp; ')}</span></div>` : '';
+  const ageRow = sa.domain_age_days > 0 ? `<div class="source-row"><span class="source-key">Domain age</span><span class="source-val">${ageText}</span></div>` : '';
 
   document.getElementById('result-empty').style.display = 'none';
   document.getElementById('result-content').style.display = 'block';
@@ -1451,25 +1276,15 @@ function renderSourceOnly(sa) {
         <div class="source-body">
           <div class="source-row">
             <span class="source-key">Credibility</span>
-            <div class="source-cred-bar">
-              <div class="source-cred-fill" style="width:${sa.credibility}%;background:${credColor}"></div>
-            </div>
+            <div class="source-cred-bar"><div class="source-cred-fill" style="width:${sa.credibility}%;background:${credColor}"></div></div>
             <span class="source-val" style="color:${credColor};min-width:40px">${sa.credibility}/100</span>
           </div>
-          <div class="source-row">
-            <span class="source-key">Category</span>
-            <span class="source-val">${sa.category}</span>
-          </div>
-          <div class="source-row">
-            <span class="source-key">Bias</span>
-            <span class="source-val">${escHtml(biasMap[sa.bias] || '— Unknown')}</span>
-          </div>
+          <div class="source-row"><span class="source-key">Category</span><span class="source-val">${sa.category}</span></div>
+          <div class="source-row"><span class="source-key">Bias</span><span class="source-val">${escHtml(biasMap[sa.bias]||'— Unknown')}</span></div>
           ${ageRow}
-          <div class="source-row">
-            <span class="source-key">Notes</span>
-            <span class="source-notes">${escHtml(sa.notes)}</span>
-          </div>
+          <div class="source-row"><span class="source-key">Notes</span><span class="source-notes">${escHtml(sa.notes)}</span></div>
           ${verifiedHTML}
+          ${sourcesRowHTML}
           ${warningHTML}
         </div>
       </div>
@@ -1477,6 +1292,124 @@ function renderSourceOnly(sa) {
         💡 This URL appears to be a news source homepage rather than a specific article.
         To analyze article content, paste the URL of a specific news story.
       </p>
+    </div>`;
+}
+
+/* ── Contextual suggestion ────────────────────────────────────── */
+async function fetchAndRenderSuggestion(verdict) {
+  const box = document.getElementById('suggestion-box');
+  if (!box) return;
+  box.style.display = 'none';
+  box.innerHTML = '';
+
+  try {
+    const res = await fetch(`${API}/trusted-sources/suggest?verdict=${encodeURIComponent(verdict)}&limit=3`);
+    if (!res.ok) return;
+    const d = await res.json();
+    if (!d.suggest || !d.sources.length) return;
+
+    box.innerHTML = `
+      <div style="
+        background:#FFF9EC;
+        border:1px solid #FCD34D;
+        border-left:3px solid #F59E0B;
+        border-radius:12px;
+        padding:16px 18px;
+        margin-top:12px;
+      ">
+        <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#92400E;margin-bottom:8px;">
+          💡 Verify with trusted sources
+        </div>
+        <div style="font-size:.83rem;color:#78350F;margin-bottom:12px;">${escHtml(d.message)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${d.sources.map(s => `
+            <a href="${escHtml(s.url)}" target="_blank" style="
+              display:inline-flex;align-items:center;gap:7px;
+              background:#fff;border:1px solid #FCD34D;border-radius:8px;
+              padding:7px 12px;font-size:.83rem;font-weight:500;color:#92400E;
+              text-decoration:none;
+            "
+            onmouseover="this.style.background='#FFFBEB'"
+            onmouseout="this.style.background='#fff'"
+            >
+              ${escHtml(s.icon)} ${escHtml(s.domain)}
+              <span style="font-size:.72rem;color:#B45309;font-family:var(--ff-mono)">${s.credibility}/100</span>
+            </a>
+          `).join('')}
+        </div>
+      </div>`;
+    box.style.display = 'block';
+  } catch (e) {
+    // silently fail
+  }
+}
+
+/* ── Trusted Sources panel (Analytics page) ───────────────────── */
+async function loadTrustedSources() {
+  const container = document.getElementById('trusted-sources-content');
+  if (!container) return;
+  container.innerHTML = '<div class="loading-overlay"><div class="big-spinner"></div><span>Loading trusted sources…</span></div>';
+
+  try {
+    const res = await fetch(`${API}/trusted-sources?min_credibility=70`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    renderTrustedSources(d);
+  } catch {
+    container.innerHTML = '';
+  }
+}
+
+function renderTrustedSources(d) {
+  const container = document.getElementById('trusted-sources-content');
+  if (!d.total) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const groupOrder = ['News', 'Fact-Checking', 'Science', 'Other'];
+  const groupColors = { 'News':'#1A4D8F', 'Fact-Checking':'#166534', 'Science':'#5B21B6', 'Other':'#6B6560' };
+
+  const groupsHTML = groupOrder
+    .filter(g => d.groups[g] && d.groups[g].length > 0)
+    .map(g => {
+      const color = groupColors[g] || '#6B6560';
+      return `
+        <div style="margin-bottom:24px;">
+          <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:${color};margin-bottom:10px;">${g}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+            ${d.groups[g].map(s => `
+              <a href="${escHtml(s.url)}" target="_blank" style="
+                display:flex;align-items:center;gap:12px;
+                background:var(--surface);border:1px solid var(--border);
+                border-radius:10px;padding:12px 14px;text-decoration:none;
+                transition:box-shadow .15s,border-color .15s;
+              "
+              onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)';this.style.borderColor='${color}'"
+              onmouseout="this.style.boxShadow='none';this.style.borderColor='var(--border)'"
+              >
+                <div style="width:38px;height:38px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${escHtml(s.icon)}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:.88rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(s.domain)}</div>
+                  <div style="font-size:.75rem;color:var(--text-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(s.notes)}</div>
+                </div>
+                <div style="font-size:.78rem;font-weight:700;color:${s.credibility>=90?'#166534':s.credibility>=70?'#1A4D8F':'#92400E'};font-family:var(--ff-mono);flex-shrink:0;">${s.credibility}</div>
+              </a>
+            `).join('')}
+          </div>
+        </div>`;
+    }).join('');
+
+  container.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-family:var(--ff-display);font-size:1.1rem;font-weight:700;color:var(--text);">Trusted Sources</div>
+          <div style="font-size:.82rem;color:var(--text-3);margin-top:3px;">${d.total} sources with credibility ≥ 70</div>
+        </div>
+        <div style="background:var(--accent-bg);color:var(--accent);font-size:.78rem;font-weight:600;padding:4px 12px;border-radius:20px;">✓ Verified</div>
+      </div>
+      ${groupsHTML}
     </div>`;
 }
 

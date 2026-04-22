@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import analyze, health, history, analytics
+from app.routers import analyze, health, history, analytics, trusted_sources
+from app.services.scheduler import start_scheduler, stop_scheduler
 from app.database.db import engine
 from app.database import models
 from dotenv import load_dotenv
@@ -49,6 +50,7 @@ app.include_router(analyze.router)
 app.include_router(health.router)
 app.include_router(history.router)
 app.include_router(analytics.router)
+app.include_router(trusted_sources.router)
 
 # Serve static files (index.html) 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -56,3 +58,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/")
 def root():
     return FileResponse("static/index.html")
+
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+
+@app.on_event("shutdown")
+def shutdown_event():
+    stop_scheduler()
