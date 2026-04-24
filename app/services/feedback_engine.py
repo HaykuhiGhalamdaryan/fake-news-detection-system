@@ -101,35 +101,34 @@ def _clamp(value: int) -> int:
 
 def _compute_domain_stats(db: Session) -> dict[str, dict]:
     """
-    Query AnalysisResult and group by domain.
-    Returns {domain: {count, avg_fake_probability}}.
+    Group AnalysisResult records by source_domain and compute per-domain
+    fake rate statistics.
 
-    Note: This works with the current schema where source domain is not
-    stored directly. We use DomainCache domains as the reference list and
-    join on article text prefix matching.
-
-    In production, add a `source_domain` column to AnalysisResult for
-    accurate per-domain aggregation.
+    Uses the source_domain column added to AnalysisResult — accurate,
+    fast, and index-backed — replacing the old text.contains() workaround.
+    Records with no source_domain (plain-text submissions) are skipped.
     """
-    # Get all cached domains that have had articles analyzed
-    cached_domains = db.query(DomainCache.domain).all()
-    cached_domains = [row.domain for row in cached_domains]
+    from sqlalchemy import func as sqlfunc
 
-    stats = {}
-    for domain in cached_domains:
-        # Match articles whose text contains the domain (URL was prepended)
-        results = db.query(AnalysisResult).filter(
-            AnalysisResult.text.contains(domain)
-        ).all()
+    rows = (
+        db.query(
+            AnalysisResult.source_domain,
+            sqlfunc.count(AnalysisResult.id).label("count"),
+            sqlfunc.avg(AnalysisResult.fake_probability).label("avg_fake"),
+        )
+        .filter(AnalysisResult.source_domain.isnot(None))
+        .group_by(AnalysisResult.source_domain)
+        .having(sqlfunc.count(AnalysisResult.id) >= MIN_ARTICLES)
+        .all()
+    )
 
-        if len(results) >= MIN_ARTICLES:
-            avg_fake = sum(r.fake_probability for r in results) / len(results)
-            stats[domain] = {
-                "count":            len(results),
-                "avg_fake_probability": round(avg_fake, 4),
-            }
-
-    return stats
+    return {
+        row.source_domain: {
+            "count":                row.count,
+            "avg_fake_probability": round(float(row.avg_fake), 4),
+        }
+        for row in rows
+    }
 
 
 def run_feedback(db: Session) -> dict:

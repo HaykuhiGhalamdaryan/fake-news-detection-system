@@ -86,13 +86,17 @@ def _extract_cited_domains(text: str, source_domain: str | None = None) -> list[
     return list(domains)
 
 
-def _get_source_domain(text: str) -> str | None:
+def _get_source_domain(article) -> str | None:
     """
-    Best-effort extraction of the article's own domain from its text.
-    url_extractor prepends the title but the URL may appear in the text.
+    Return the source domain for an AnalysisResult row.
+    Uses the source_domain column when available; falls back to
+    regex extraction from text for legacy rows that predate the column.
     """
+    if article.source_domain:
+        return article.source_domain
+    # Legacy fallback for rows saved before the source_domain column existed
     try:
-        urls = _URL_RE.findall(text)
+        urls = _URL_RE.findall(article.text)
         if urls:
             return urls[0].lower()
     except Exception:
@@ -126,7 +130,7 @@ def _build_citation_scores(db: Session) -> dict[str, float]:
     citation_scores: dict[str, float] = defaultdict(float)
 
     for article in trusted_articles:
-        source_domain = _get_source_domain(article.text)
+        source_domain = _get_source_domain(article)
         cited_domains = _extract_cited_domains(article.text, source_domain)
 
         # Weight by how credible this article is

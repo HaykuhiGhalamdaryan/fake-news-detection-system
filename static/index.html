@@ -977,14 +977,17 @@ async function loadHistory() {
     if (historyFilter) url += `&verdict=${encodeURIComponent(historyFilter)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error();
-    const items = await res.json();
-    renderHistory(items);
+    const data = await res.json();
+    // Support both new {total, results} format and legacy plain array
+    const items = Array.isArray(data) ? data : (data.results || []);
+    const total = Array.isArray(data) ? null : (data.total ?? null);
+    renderHistory(items, total);
   } catch {
     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Could not load history. Is the API running?</p></div>';
   }
 }
 
-function renderHistory(items) {
+function renderHistory(items, total) {
   const list = document.getElementById('history-list');
   if (!items.length) {
     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No analyses found.</p></div>';
@@ -1016,10 +1019,12 @@ function renderHistory(items) {
   `).join('');
 
   const pg = document.getElementById('pagination');
+  const totalPages = total !== null ? Math.ceil(total / HISTORY_LIMIT) : null;
+  const hasNext = total !== null ? (historyPage + 1) < totalPages : items.length >= HISTORY_LIMIT;
   pg.innerHTML = `
     <button class="page-btn" onclick="prevPage()" ${historyPage===0?'disabled':''}>← Prev</button>
-    <span class="page-info">Page ${historyPage+1}</span>
-    <button class="page-btn" onclick="nextPage()" ${items.length<HISTORY_LIMIT?'disabled':''}>Next →</button>
+    <span class="page-info">Page ${historyPage+1}${totalPages ? ' / ' + totalPages : ''}</span>
+    <button class="page-btn" onclick="nextPage()" ${!hasNext?'disabled':''}>Next →</button>
   `;
 }
 

@@ -13,6 +13,88 @@ from sentence_transformers import SentenceTransformer, util
 
 _model: Optional[SentenceTransformer] = None
 
+# ---------------------------------------------------------------------------
+# Source credibility weights
+# Normalised to 0.0–1.0 from the _SOURCE_DB scores in source_analyzer.py.
+# A sentence from Reuters (0.95) beats an equal sentence from an unknown
+# source (0.50 default) in the weighted scoring.
+# ---------------------------------------------------------------------------
+
+_SOURCE_CREDIBILITY: dict[str, float] = {
+    "wikipedia.org": 0.85,
+    "duckduckgo.com": 0.70,
+    # NewsAPI aggregates many outlets — mid-range default
+    "newsapi.org":   0.70,
+    # Per-outlet overrides used when NewsAPI returns a known domain
+    "reuters.com":   0.95,
+    "apnews.com":    0.95,
+    "bbc.com":       0.92,
+    "bbc.co.uk":     0.92,
+    "theguardian.com": 0.85,
+    "nytimes.com":   0.85,
+    "economist.com": 0.88,
+    "bloomberg.com": 0.87,
+    "nature.com":    0.97,
+    "science.org":   0.97,
+    "snopes.com":    0.85,
+    "factcheck.org": 0.88,
+    "politifact.com": 0.82,
+    "foxnews.com":   0.60,
+    "dailymail.co.uk": 0.40,
+    "breitbart.com": 0.20,
+    "infowars.com":  0.02,
+    "rt.com":        0.20,
+}
+
+_DEFAULT_SOURCE_WEIGHT = 0.65  # unknown source gets a modest weight
+
+
+def _source_weight(source_label: str) -> float:
+    """Return a credibility weight (0–1) for a named source."""
+    return _SOURCE_CREDIBILITY.get(source_label.lower(), _DEFAULT_SOURCE_WEIGHT)
+
+
+# ---------------------------------------------------------------------------
+# Negation flip helpers
+# Instead of bailing out to UNKNOWN, we strip the negation from the claim,
+# search for the affirmative version, and invert the result at the end.
+# ---------------------------------------------------------------------------
+
+_NEGATION_FLIP_PAIRS = [
+    (re.compile(r"\bisn'?t\b",    re.I), "is"),
+    (re.compile(r"\baren'?t\b",   re.I), "are"),
+    (re.compile(r"\bwasn'?t\b",   re.I), "was"),
+    (re.compile(r"\bweren'?t\b",  re.I), "were"),
+    (re.compile(r"\bdon'?t\b",    re.I), "do"),
+    (re.compile(r"\bdoesn'?t\b",  re.I), "does"),
+    (re.compile(r"\bdidn'?t\b",   re.I), "did"),
+    (re.compile(r"\bcan'?t\b",    re.I), "can"),
+    (re.compile(r"\bwon'?t\b",    re.I), "will"),
+    (re.compile(r"\bwouldn'?t\b", re.I), "would"),
+    (re.compile(r"\bno longer\b", re.I), "still"),
+    (re.compile(r"\bnot\b",       re.I), ""),
+    (re.compile(r"\bnever\b",     re.I), ""),
+    (re.compile(r"\buntrue\b",    re.I), "true"),
+    (re.compile(r"\bincorrect\b", re.I), "correct"),
+    (re.compile(r"\bfalse that\b",re.I), "true that"),
+]
+
+
+def _flip_negation(claim: str) -> str:
+    """
+    Return an affirmative version of a negated claim.
+    Applies the first matching negation pattern and stops.
+    E.g. "The Earth is not flat" -> "The Earth is flat"
+         "Paris isn't the capital" -> "Paris is the capital"
+    """
+    for pattern, replacement in _NEGATION_FLIP_PAIRS:
+        flipped = pattern.sub(replacement, claim, count=1).strip()
+        # Clean up double spaces left by removing "not"/"never"
+        flipped = re.sub(r" {2,}", " ", flipped)
+        if flipped != claim:
+            return flipped
+    return claim
+
 
 def _get_model() -> SentenceTransformer:
     global _model
@@ -203,15 +285,28 @@ def _topic_relevance(claim: str, evidence: str) -> float:
     return matches / len(content_words)
 
 
-def _best_match(claim_emb, sentences: list[str], model) -> tuple[float, str]:
+def _best_match(claim_emb, sentences: list[str], model,
+                source_weight: float = 1.0) -> tuple[float, str]:
+    """
+    Return the (weighted_score, sentence) pair with the highest
+    credibility-adjusted similarity.
+
+    weighted_score = cosine_similarity * source_weight
+
+    source_weight is the normalised credibility of the source that
+    provided these sentences (0.0–1.0).  A sentence from Reuters
+    (weight 0.95) will beat an equal sentence from an unknown site
+    (weight 0.65) after weighting.
+    """
     best_score, best_sentence = 0.0, ""
     for s in sentences:
         try:
-            score = float(util.cos_sim(
+            raw = float(util.cos_sim(
                 claim_emb, model.encode(s, convert_to_tensor=True)
             ).item())
-            if score > best_score:
-                best_score, best_sentence = score, s
+            weighted = raw * source_weight
+            if weighted > best_score:
+                best_score, best_sentence = weighted, s
         except Exception:
             continue
     return best_score, best_sentence
@@ -219,11 +314,26 @@ def _best_match(claim_emb, sentences: list[str], model) -> tuple[float, str]:
 
 def fact_check_claim(claim: str) -> dict:
     model        = _get_model()
-    query        = _build_query(claim)
     has_negation = _claim_has_negation(claim)
 
+    # ------------------------------------------------------------------
+    # Improvement 1 — Negation flip
+    # If the claim is negated ("The Earth is not flat"), we search for
+    # the affirmative version ("The Earth is flat") so the embedding
+    # model can find matching evidence.  We track this and invert the
+    # verdict_hint at the end: SUPPORTED → CONTRADICTED and vice versa.
+    # ------------------------------------------------------------------
+    if has_negation:
+        search_claim = _flip_negation(claim)
+        negation_inverted = True
+    else:
+        search_claim = claim
+        negation_inverted = False
+
+    query = _build_query(search_claim)
+
     try:
-        claim_emb = model.encode(claim, convert_to_tensor=True)
+        search_emb = model.encode(search_claim, convert_to_tensor=True)
     except Exception:
         return {
             "sources": [], "found_sources": [], "support_score": 0.1,
@@ -241,28 +351,51 @@ def fact_check_claim(claim: str) -> dict:
         wiki_sents, wiki_titles = f_wiki.result()
         ddg_sents               = f_ddg.result()
 
-    news_score, news_sent = _best_match(claim_emb, news_sents, model)
-    wiki_score, wiki_sent = _best_match(claim_emb, wiki_sents, model)
-    ddg_score,  ddg_sent  = _best_match(claim_emb, ddg_sents,  model)
+    # ------------------------------------------------------------------
+    # Improvement 2 — Source credibility weighting
+    # Each source gets a weight derived from its known credibility score.
+    # A sentence from Wikipedia (0.85) beats an equally similar sentence
+    # from an unknown aggregator (0.65) after the weight is applied.
+    # The raw similarity is still stored as support_score so downstream
+    # logic is not distorted — only the winner selection uses weighting.
+    # ------------------------------------------------------------------
+    news_wscore, news_sent = _best_match(
+        search_emb, news_sents, model,
+        source_weight=_source_weight("newsapi.org")
+    )
+    wiki_wscore, wiki_sent = _best_match(
+        search_emb, wiki_sents, model,
+        source_weight=_source_weight("wikipedia.org")
+    )
+    ddg_wscore, ddg_sent = _best_match(
+        search_emb, ddg_sents, model,
+        source_weight=_source_weight("duckduckgo.com")
+    )
 
     results = [
-        (news_score, news_sent, "NewsAPI"),
-        (wiki_score, wiki_sent, "Wikipedia"),
-        (ddg_score,  ddg_sent,  "DuckDuckGo"),
+        (news_wscore, news_sent, "NewsAPI"),
+        (wiki_wscore, wiki_sent, "Wikipedia"),
+        (ddg_wscore,  ddg_sent,  "DuckDuckGo"),
     ]
-    best_score, best_sentence, best_source = max(results, key=lambda x: x[0])
+    best_wscore, best_sentence, best_source = max(results, key=lambda x: x[0])
 
-    geo_penalty      = _geo_mismatch_penalty(claim, best_sentence) if best_sentence else 0.0
-    entity_overlap   = _entity_overlap(claim, best_sentence)       if best_sentence else 0.0
-    topic_relevance  = _topic_relevance(claim, best_sentence)      if best_sentence else 0.0
+    # Recover the raw (unweighted) similarity for support_score reporting
+    best_weight = _source_weight(
+        "newsapi.org"    if best_source == "NewsAPI"    else
+        "wikipedia.org"  if best_source == "Wikipedia"  else
+        "duckduckgo.com"
+    )
+    best_score = round(best_wscore / best_weight, 4) if best_weight else best_wscore
+
+    geo_penalty      = _geo_mismatch_penalty(search_claim, best_sentence) if best_sentence else 0.0
+    entity_overlap   = _entity_overlap(search_claim, best_sentence)       if best_sentence else 0.0
+    topic_relevance  = _topic_relevance(search_claim, best_sentence)      if best_sentence else 0.0
     entity_penalty   = 0.20 if entity_overlap < 0.40 else 0.0
     contradiction_score = min(geo_penalty + entity_penalty, 0.60)
     net_support      = round(best_score - contradiction_score, 4)
 
+    # Determine verdict_hint for the affirmative search_claim
     if best_score < 0.25:
-        verdict_hint = "UNKNOWN"
-
-    elif has_negation:
         verdict_hint = "UNKNOWN"
 
     elif geo_penalty > 0:
@@ -275,9 +408,9 @@ def fact_check_claim(claim: str) -> dict:
         verdict_hint = "UNKNOWN"
 
     elif (
-        best_score >= 0.75          
-        and entity_overlap >= 0.60  
-        and topic_relevance >= 0.40 
+        best_score >= 0.75
+        and entity_overlap >= 0.60
+        and topic_relevance >= 0.40
         and contradiction_score == 0.0
     ):
         verdict_hint = "SUPPORTED"
@@ -291,6 +424,19 @@ def fact_check_claim(claim: str) -> dict:
 
     else:
         verdict_hint = "UNKNOWN"
+
+    # ------------------------------------------------------------------
+    # Invert verdict for negated claims
+    # We searched the affirmative version, so if the affirmative is
+    # SUPPORTED, the original negated claim is actually CONTRADICTED,
+    # and if the affirmative is CONTRADICTED, the original is SUPPORTED.
+    # UNKNOWN stays UNKNOWN — we still couldn't find relevant evidence.
+    # ------------------------------------------------------------------
+    if negation_inverted:
+        if verdict_hint == "SUPPORTED":
+            verdict_hint = "CONTRADICTED"
+        elif verdict_hint == "CONTRADICTED":
+            verdict_hint = "SUPPORTED"
 
     active_sources = (
         (["NewsAPI"]    if news_sents else []) +
@@ -318,4 +464,5 @@ def fact_check_claim(claim: str) -> dict:
         "verdict_hint":        verdict_hint,
         "entity_overlap":      round(entity_overlap, 3),
         "topic_relevance":     round(topic_relevance, 3),
+        "negation_inverted":   negation_inverted,
     }

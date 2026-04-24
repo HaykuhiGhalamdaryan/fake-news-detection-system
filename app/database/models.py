@@ -10,6 +10,7 @@ class AnalysisResult(Base):
 
     id                = Column(Integer, primary_key=True, index=True)
     text              = Column(Text,    nullable=False)
+    source_domain     = Column(String,  nullable=True,  index=True)
     verdict           = Column(String,  nullable=False)
     confidence        = Column(Integer, nullable=False)
     credibility_score = Column(Integer, nullable=False)

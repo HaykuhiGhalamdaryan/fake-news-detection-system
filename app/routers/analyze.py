@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from urllib.parse import urlparse
 
 from app.database.db import get_db
 from app.database.models import AnalysisResult
@@ -20,6 +21,27 @@ from app.services.source_analyzer import analyze_source
 from app.services.url_extractor import extract_text_from_url, is_homepage_url
 
 router = APIRouter()
+
+
+def _extract_domain(text: str, source_url: str | None = None) -> str | None:
+    """
+    Extract the source domain for an analysis record.
+
+    Priority:
+    1. source_url — passed explicitly by analyze_url (most reliable)
+    2. First token of text — fallback for cases where a URL was prepended
+    Returns None for plain-text submissions that have no source URL.
+    """
+    url = source_url or (text.split()[0] if text.strip() else "")
+    if url.startswith("http"):
+        try:
+            domain = urlparse(url).netloc.lower()
+            if domain.startswith("www."):
+                domain = domain[4:]
+            return domain or None
+        except Exception:
+            pass
+    return None
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
@@ -59,6 +81,7 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
         sentiment_score=nlp_result["sentiment_score"],
         support_score=support_score,
         manipulation_score=manipulation_score,
+        verdict_hint=verdict_hint,
     )
 
     # ------------------------------------------------------------------
@@ -134,18 +157,37 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
 
     risk_level = classify_risk(risk_score)
 
-    if (
-        emotion_analysis["tone"] == "neutral"
-        and fake_probability < 0.50
-        and net_support_score >= 0.25
-    ):
-        risk_level = "LOW"
+    # ------------------------------------------------------------------
+    # Verdict ↔ Risk consistency
+    # Prevent contradictory UI states like verdict="True" + risk="HIGH"
+    # or verdict="Fake" + risk="LOW".
+    # The verdict is the authoritative signal — risk level is aligned to it.
+    # ------------------------------------------------------------------
+    if verdict in ("True", "Likely True"):
+        # Credible content cannot be HIGH risk
+        if risk_level == "HIGH":
+            risk_level = "MEDIUM"
+        # Strong fact-check support → LOW
+        if (
+            verdict == "True"
+            or (verdict == "Likely True" and net_support_score >= 0.25)
+        ):
+            risk_level = "LOW"
+
+    elif verdict in ("Fake", "Likely Fake"):
+        # Fake content is always at least MEDIUM risk
+        if risk_level == "LOW":
+            risk_level = "MEDIUM"
+        # Strongly fake → HIGH
+        if verdict == "Fake" or fake_probability >= 0.70:
+            risk_level = "HIGH"
 
     # ------------------------------------------------------------------
     # 10. Persist to database
     # ------------------------------------------------------------------
     db_record = AnalysisResult(
         text=request.text,
+        source_domain=_extract_domain(request.text, request.source_url),
         verdict=verdict,
         confidence=fake_confidence,
         credibility_score=credibility_score,
@@ -269,8 +311,8 @@ def analyze_url(request: AnalyzeURLRequest, db: Session = Depends(get_db)):
     # Source credibility analysis (with SQL cache for unknown domains)
     source_analysis = analyze_source(request.url, db)
 
-    # Full NLP pipeline — reuse analyze_claim
-    fake_req = AnalyzeRequest(text=text)
+    # Full NLP pipeline — reuse analyze_claim, passing source URL for domain tracking
+    fake_req = AnalyzeRequest(text=text, source_url=request.url)
     response = analyze_claim(fake_req, db)
 
     # Attach mode, warning and source analysis to response dict

@@ -6,6 +6,7 @@ from typing import List, Optional
 
 class AnalyzeRequest(BaseModel):
     text: str
+    source_url: Optional[str] = None
 
 
 class AnalyzeURLRequest(BaseModel):

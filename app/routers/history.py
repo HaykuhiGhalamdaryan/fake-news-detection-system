@@ -15,19 +15,25 @@ def get_history(
     limit: int = 10,
     db: Session = Depends(get_db)
 ):
-
     query = db.query(AnalysisResult)
 
     if verdict:
         query = query.filter(AnalysisResult.verdict == verdict)
-        
+
+    total = query.count()
+
     results = query\
         .order_by(AnalysisResult.created_at.desc())\
         .offset(skip)\
         .limit(limit)\
         .all()
 
-    return results
+    return {
+        "total":   total,
+        "skip":    skip,
+        "limit":   limit,
+        "results": results,
+    }
 
 @router.delete("/history/{analysis_id}")
 def delete_analysis(
