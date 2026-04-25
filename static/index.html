@@ -263,6 +263,7 @@ nav { display: flex; gap: 4px; }
   color: var(--text-2);
 }
 .signal-tag.danger { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
+.signal-tag.positive { background: #DCFCE7; border-color: #BBF7D0; color: #166534; }
 
 /* Evidence */
 .evidence-box {
@@ -802,7 +803,12 @@ nav { display: flex; gap: 4px; }
 <div class="toast" id="toast"></div>
 
 <script>
-const API = 'http://127.0.0.1:8000';
+// API base URL — dynamically derived from the page's own origin so the
+// frontend works without change on any server (local dev or production).
+// Falls back to localhost only when opened directly as a file (origin=null).
+const API = (window.location.origin && window.location.origin !== 'null')
+  ? window.location.origin
+  : 'http://127.0.0.1:8000';
 
 /* ── Navigation ───────────────────────────────────────────────── */
 function navigate(page) {
@@ -881,12 +887,38 @@ async function analyzeText() {
 function renderResult(d) {
   const vc = verdictClass(d.verdict);
   const signals = d.signals || [];
-  const dangerSignals = ['HIGH_FAKE_PROBABILITY','FACT_CONTRADICTION','MANIPULATIVE_LANGUAGE',
-    'CLICKBAIT_LANGUAGE','HYPERBOLIC_LANGUAGE','VAGUE_ATTRIBUTION','EXCESSIVE_PUNCTUATION'];
+  const dangerSignals   = [
+    'HIGH_FAKE_PROBABILITY', 'ELEVATED_FAKE_PROBABILITY',
+    'FACT_CONTRADICTION', 'MANIPULATIVE_LANGUAGE',
+    'CLICKBAIT_LANGUAGE', 'HYPERBOLIC_LANGUAGE',
+    'VAGUE_ATTRIBUTION', 'EXCESSIVE_PUNCTUATION',
+    'NO_EVIDENCE_FOUND', 'LOW_CREDIBILITY',
+  ];
+  const positiveSignals = [
+    'FACT_SUPPORTED', 'HIGH_CREDIBILITY',
+  ];
 
   const signalsHTML = signals.length
-    ? signals.map(s => `<span class="signal-tag ${dangerSignals.includes(s)?'danger':''}">${s}</span>`).join('')
+    ? signals.map(s => {
+        const cls = dangerSignals.includes(s)
+          ? 'signal-tag danger'
+          : positiveSignals.includes(s)
+            ? 'signal-tag positive'
+            : 'signal-tag';
+        return `<span class="${cls}">${s}</span>`;
+      }).join('')
     : '<span style="color:var(--text-3);font-size:.85rem">No signals detected</span>';
+
+  const negationNote = d.fact_check?.negation_inverted
+    ? `<div style="
+        background:#EEF3FB;border:1px solid #BFDBFE;border-radius:8px;
+        padding:9px 13px;margin-bottom:10px;
+        font-size:.82rem;color:#1A4D8F;display:flex;align-items:flex-start;gap:8px;">
+        <span style="flex-shrink:0">🔄</span>
+        <span>This claim contains negation. The system searched for the affirmative version
+        and <strong>inverted the result</strong> — the verdict reflects the original negated claim.</span>
+      </div>`
+    : '';
 
   const evidenceHTML = d.fact_check?.evidence?.[0]
     ? `<div class="evidence-box">
@@ -936,6 +968,7 @@ function renderResult(d) {
     </div>
     <div class="result-section">
       <div class="section-title">Best Evidence Found</div>
+      ${negationNote}
       ${evidenceHTML}
     </div>
     <div class="result-section">
@@ -1013,7 +1046,7 @@ function renderHistory(items, total) {
         <div class="detail-cell"><div class="detail-label">Risk Level</div><div class="detail-value"><span class="risk-badge ${item.risk_level}">${item.risk_level}</span></div></div>
         <div class="detail-cell"><div class="detail-label">Sentiment</div><div class="detail-value"><span class="sentiment-pill ${item.sentiment}" style="font-size:.78rem">${item.sentiment}</span></div></div>
         <div class="detail-cell"><div class="detail-label">Risk Score</div><div class="detail-value">${item.risk_score}/100</div></div>
-        <div class="detail-cell"><div class="detail-label">Confidence</div><div class="detail-value">${Math.round(item.fake_probability*100)}%</div></div>
+        <div class="detail-cell"><div class="detail-label">Source</div><div class="detail-value" style="font-family:var(--ff-mono);font-size:.78rem">${item.source_domain || '— plain text'}</div></div>
       </div>
     </div>
   `).join('');
@@ -1111,14 +1144,6 @@ function renderAnalytics(d) {
           <div class="metric-row"><span class="metric-name">Avg. Fake Probability</span><span class="metric-value">${((d.average_fake_probability||0)*100).toFixed(1)}%</span></div>
           <div class="metric-row"><span class="metric-name">Avg. Risk Score</span><span class="metric-value">${d.average_risk_score||0}/100</span></div>
           <div class="metric-row"><span class="metric-name">Analyses Today</span><span class="metric-value">${d.analyses_today||0}</span></div>
-        </div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Risk Breakdown</div>
-        <div class="bar-chart">
-          ${buildBar('High Risk',   d.high_risk||0,   total, '#DC2626')}
-          ${buildBar('Medium Risk', d.medium_risk||0, total, '#D97706')}
-          ${buildBar('Low Risk',    d.low_risk||0,    total, '#16A34A')}
         </div>
       </div>
     </div>

@@ -39,18 +39,42 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _MOCK_API_DATA: dict[str, dict] = {
-    "bbc.com":          {"credibility": 92, "category": "mainstream",  "bias": "center",        "notes": "BBC — UK public broadcaster, strong editorial standards",         "source": "MBFC"},
-    "reuters.com":      {"credibility": 95, "category": "mainstream",  "bias": "center",        "notes": "Reuters — international wire service, strict factual reporting",  "source": "MBFC"},
-    "apnews.com":       {"credibility": 95, "category": "mainstream",  "bias": "center",        "notes": "Associated Press — international wire service",                   "source": "MBFC"},
-    "nytimes.com":      {"credibility": 85, "category": "mainstream",  "bias": "center-left",   "notes": "New York Times — major US newspaper",                             "source": "MBFC"},
-    "foxnews.com":      {"credibility": 60, "category": "mainstream",  "bias": "right",         "notes": "Fox News — major US cable news, strong editorial slant",           "source": "MBFC"},
-    "infowars.com":     {"credibility": 2,  "category": "conspiracy",  "bias": "right",         "notes": "InfoWars — known misinformation, conspiracy theories",             "source": "MBFC"},
-    "theonion.com":     {"credibility": 10, "category": "satire",      "bias": "center",        "notes": "The Onion — well-known satire website, not real news",             "source": "MBFC"},
-    "rt.com":           {"credibility": 20, "category": "state-media", "bias": "unknown",       "notes": "RT — Russian state media, known propaganda",                      "source": "MBFC"},
-    "snopes.com":       {"credibility": 85, "category": "mainstream",  "bias": "center",        "notes": "Snopes — established fact-checking website",                      "source": "MBFC"},
-    "dailymail.co.uk":  {"credibility": 40, "category": "tabloid",     "bias": "right",         "notes": "Daily Mail — UK tabloid, frequent sensationalism",                "source": "MBFC"},
-    "bloomberg.com":    {"credibility": 87, "category": "mainstream",  "bias": "center",        "notes": "Bloomberg — major financial/business news",                       "source": "MBFC"},
-    "breitbart.com":    {"credibility": 20, "category": "conspiracy",  "bias": "right",         "notes": "Breitbart — far-right, frequent misinformation",                  "source": "MBFC"},
+    # Wire services
+    "reuters.com":           {"credibility": 95, "category": "mainstream",   "bias": "center",      "notes": "Reuters — international wire service, strict factual reporting",        "source": "MBFC"},
+    "apnews.com":            {"credibility": 95, "category": "mainstream",   "bias": "center",      "notes": "Associated Press — international wire service",                          "source": "MBFC"},
+    # Mainstream international
+    "bbc.com":               {"credibility": 92, "category": "mainstream",   "bias": "center",      "notes": "BBC — UK public broadcaster, strong editorial standards",                "source": "MBFC"},
+    "bbc.co.uk":             {"credibility": 92, "category": "mainstream",   "bias": "center",      "notes": "BBC — UK public broadcaster",                                            "source": "MBFC"},
+    "theguardian.com":       {"credibility": 85, "category": "mainstream",   "bias": "center-left", "notes": "The Guardian — UK newspaper, strong editorial standards",                "source": "MBFC"},
+    "economist.com":         {"credibility": 88, "category": "mainstream",   "bias": "center",      "notes": "The Economist — UK weekly, rigorous fact-checking",                      "source": "MBFC"},
+    "bloomberg.com":         {"credibility": 87, "category": "mainstream",   "bias": "center",      "notes": "Bloomberg — major financial/business news",                              "source": "MBFC"},
+    # Mainstream US
+    "nytimes.com":           {"credibility": 85, "category": "mainstream",   "bias": "center-left", "notes": "New York Times — major US newspaper",                                    "source": "MBFC"},
+    "washingtonpost.com":    {"credibility": 83, "category": "mainstream",   "bias": "center-left", "notes": "Washington Post — major US newspaper",                                   "source": "MBFC"},
+    "npr.org":               {"credibility": 88, "category": "mainstream",   "bias": "center-left", "notes": "NPR — US public radio, rigorous editorial standards",                    "source": "MBFC"},
+    "foxnews.com":           {"credibility": 60, "category": "mainstream",   "bias": "right",       "notes": "Fox News — major US cable news, strong editorial slant",                 "source": "MBFC"},
+    # Fact-checkers
+    "snopes.com":            {"credibility": 85, "category": "mainstream",   "bias": "center",      "notes": "Snopes — established fact-checking website",                             "source": "MBFC"},
+    "factcheck.org":         {"credibility": 88, "category": "mainstream",   "bias": "center",      "notes": "FactCheck.org — non-partisan fact-checking",                             "source": "MBFC"},
+    "politifact.com":        {"credibility": 82, "category": "mainstream",   "bias": "center-left", "notes": "PolitiFact — Pulitzer Prize-winning fact-checker",                       "source": "MBFC"},
+    "fullfact.org":          {"credibility": 85, "category": "mainstream",   "bias": "center",      "notes": "Full Fact — UK independent fact-checking charity",                       "source": "MBFC"},
+    # Science
+    "nature.com":            {"credibility": 97, "category": "mainstream",   "bias": "center",      "notes": "Nature — peer-reviewed scientific journal",                              "source": "MBFC"},
+    "science.org":           {"credibility": 97, "category": "mainstream",   "bias": "center",      "notes": "Science — peer-reviewed journal, AAAS",                                  "source": "MBFC"},
+    "scientificamerican.com":{"credibility": 90, "category": "mainstream",   "bias": "center",      "notes": "Scientific American — established science magazine",                     "source": "MBFC"},
+    "newscientist.com":      {"credibility": 88, "category": "mainstream",   "bias": "center",      "notes": "New Scientist — science and technology magazine",                        "source": "MBFC"},
+    # Tabloids
+    "dailymail.co.uk":       {"credibility": 40, "category": "tabloid",      "bias": "right",       "notes": "Daily Mail — UK tabloid, frequent sensationalism",                      "source": "MBFC"},
+    "nypost.com":            {"credibility": 50, "category": "tabloid",      "bias": "right",       "notes": "New York Post — US tabloid, editorial slant",                            "source": "MBFC"},
+    # Conspiracy / misinformation
+    "infowars.com":          {"credibility": 2,  "category": "conspiracy",   "bias": "right",       "notes": "InfoWars — known misinformation and conspiracy theories",                "source": "MBFC"},
+    "breitbart.com":         {"credibility": 20, "category": "conspiracy",   "bias": "right",       "notes": "Breitbart — far-right, frequent misinformation",                        "source": "MBFC"},
+    # State media
+    "rt.com":                {"credibility": 20, "category": "state-media",  "bias": "unknown",     "notes": "RT — Russian state media, known propaganda",                             "source": "MBFC"},
+    "tass.com":              {"credibility": 15, "category": "state-media",  "bias": "unknown",     "notes": "TASS — Russian state news agency",                                       "source": "MBFC"},
+    # Satire
+    "theonion.com":          {"credibility": 10, "category": "satire",       "bias": "center",      "notes": "The Onion — well-known satire website, not real news",                   "source": "MBFC"},
+    "babylonbee.com":        {"credibility": 10, "category": "satire",       "bias": "right",       "notes": "Babylon Bee — satirical website, not real news",                         "source": "MBFC"},
 }
 
 

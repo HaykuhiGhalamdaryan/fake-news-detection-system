@@ -56,12 +56,13 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
     # ------------------------------------------------------------------
     # 2. Text feature analysis
     # ------------------------------------------------------------------
-    text_features = analyze_text_features(request.text)
+    text_features      = analyze_text_features(request.text)
     manipulation_score = text_features["manipulation_score"]
-    manipulation_contribution = get_manipulation_score_contribution(manipulation_score)
 
-    # Blend: 85% ML score + 15% manipulation nudge
-    fake_probability = round(0.85 * fake_probability + 0.15 * manipulation_contribution, 4)
+    # NOTE: manipulation blending happens AFTER fact-checking so the
+    # blended score uses the full picture. manipulation_contribution is
+    # computed once here and reused — not double-counted in credibility.
+    manipulation_contribution = get_manipulation_score_contribution(manipulation_score)
 
     # ------------------------------------------------------------------
     # 3. Fact checking
@@ -72,6 +73,14 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
     support_score     = float(fact_check_result.get("support_score", 0.0))
     net_support_score = float(fact_check_result.get("net_support_score", support_score))
     verdict_hint      = fact_check_result.get("verdict_hint", "UNKNOWN")
+
+    # Blend manipulation after fact-check so all signals are available.
+    # 85% ML ensemble + 15% manipulation nudge — applied once here only.
+    # credibility.py receives raw manipulation_score separately so there
+    # is no double-counting.
+    fake_probability = round(
+        0.85 * fake_probability + 0.15 * manipulation_contribution, 4
+    )
 
     # ------------------------------------------------------------------
     # 4. Credibility score
@@ -98,6 +107,17 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
 
     emotional_words_detected = len(emotion_analysis["detected_patterns"]) > 0
 
+    # Count only genuinely emotional/manipulation signals for risk scoring —
+    # structural signals like TITLE_CASE_ABUSE should not trigger +15 penalty
+    _EMOTIONAL_SIGNAL_TAGS = {
+        "EMOTIONAL_LANGUAGE", "CLICKBAIT_LANGUAGE",
+        "HYPERBOLIC_LANGUAGE", "VAGUE_ATTRIBUTION",
+    }
+    emotional_signal_count = sum(
+        1 for s in emotion_analysis["detected_patterns"]
+        if s in _EMOTIONAL_SIGNAL_TAGS
+    )
+
     # ------------------------------------------------------------------
     # 6. Verdict
     # ------------------------------------------------------------------
@@ -119,31 +139,27 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
     # 7. Signals
     # ------------------------------------------------------------------
     signals = generate_signals(
-        fake_probability,
-        credibility_score,
-        support_score,
-        emotional_words_detected,
+        fake_probability=fake_probability,
+        credibility_score=credibility_score,
+        support_score=support_score,
+        emotional_words_detected=emotional_words_detected,
+        verdict_hint=verdict_hint,
+        manipulation_signals=text_features["signals"],
     )
-
-    for sig in text_features["signals"]:
-        if sig not in signals:
-            signals.append(sig)
 
     if emotion_analysis["detected_patterns"] and "MANIPULATIVE_LANGUAGE" not in signals:
         signals.append("MANIPULATIVE_LANGUAGE")
-
-    if verdict_hint == "CONTRADICTED":
-        signals.append("FACT_CONTRADICTION")
 
     # ------------------------------------------------------------------
     # 8. Explanation
     # ------------------------------------------------------------------
     explanation = generate_explanation(
-        fake_probability,
-        nlp_result["sentiment"],
-        credibility_score,
-        nlp_result["sentiment_score"],
+        fake_score=fake_probability,
+        sentiment=nlp_result["sentiment"],
+        credibility_score=credibility_score,
+        sentiment_score=nlp_result["sentiment_score"],
         signals=signals,
+        verdict=verdict,
     )
 
     # ------------------------------------------------------------------
@@ -153,6 +169,7 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
         fake_probability,
         support_score,
         emotional_words_detected,
+        emotional_signal_count=emotional_signal_count,
     )
 
     risk_level = classify_risk(risk_score)

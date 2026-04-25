@@ -18,8 +18,9 @@ from bs4 import BeautifulSoup
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-_TIMEOUT = 10  # seconds
-_MAX_TEXT_CHARS = 8000  # cap extracted text to avoid huge payloads
+_TIMEOUT      = 10   # seconds per attempt
+_MAX_RETRIES  = 2    # total attempts (1 initial + 1 retry)
+_MAX_TEXT_CHARS = 8000
 _USER_AGENT = (
     "Mozilla/5.0 (compatible; TruthLens/1.0; fake-news-detection-research)"
 )
@@ -195,30 +196,45 @@ def extract_text_from_url(url: str) -> dict:
         return {"success": False, "text": "", "title": "", "url": url,
                 "word_count": 0, "is_likely_listing": False, "listing_warning": "", "error": err}
 
-    try:
-        response = requests.get(
-            url,
-            timeout=_TIMEOUT,
-            headers={
-                "User-Agent": _USER_AGENT,
-                "Accept": "text/html,application/xhtml+xml",
-                "Accept-Language": "en-US,en;q=0.9",
-            },
-            allow_redirects=True,
-        )
-        response.raise_for_status()
-    except requests.exceptions.Timeout:
-        return {"success": False, "text": "", "title": "", "url": url,
-                "word_count": 0, "is_likely_listing": False, "listing_warning": "", "error": "Request timed out after 10 seconds"}
-    except requests.exceptions.ConnectionError:
-        return {"success": False, "text": "", "title": "", "url": url,
-                "word_count": 0, "is_likely_listing": False, "listing_warning": "", "error": "Could not connect to the URL"}
-    except requests.exceptions.HTTPError as e:
-        return {"success": False, "text": "", "title": "", "url": url,
-                "word_count": 0, "is_likely_listing": False, "listing_warning": "", "error": f"HTTP error: {e.response.status_code}"}
-    except Exception as e:
-        return {"success": False, "text": "", "title": "", "url": url,
-                "word_count": 0, "is_likely_listing": False, "listing_warning": "", "error": str(e)}
+    _fail_result = {"success": False, "text": "", "title": "", "url": url,
+                    "word_count": 0, "is_likely_listing": False, "listing_warning": ""}
+
+    last_error = ""
+    response   = None
+
+    for attempt in range(_MAX_RETRIES):
+        try:
+            response = requests.get(
+                url,
+                timeout=_TIMEOUT,
+                headers={
+                    "User-Agent":      _USER_AGENT,
+                    "Accept":          "text/html,application/xhtml+xml",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
+                allow_redirects=True,
+            )
+            response.raise_for_status()
+            break   # success — exit retry loop
+
+        except requests.exceptions.Timeout:
+            last_error = f"Request timed out after {_TIMEOUT} seconds"
+        except requests.exceptions.ConnectionError:
+            last_error = "Could not connect to the URL"
+        except requests.exceptions.HTTPError as e:
+            # 4xx errors won't improve on retry — fail immediately
+            last_error = f"HTTP error: {e.response.status_code}"
+            return {**_fail_result, "error": last_error}
+        except Exception as e:
+            last_error = str(e)
+
+        # Only retry on timeout / connection errors
+        if attempt + 1 < _MAX_RETRIES:
+            import time
+            time.sleep(1)
+
+    if response is None:
+        return {**_fail_result, "error": last_error}
 
     # Parse HTML
     content_type = response.headers.get("content-type", "")

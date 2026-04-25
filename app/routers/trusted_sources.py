@@ -117,17 +117,16 @@ def suggest_trusted_sources(
     Suggest trusted sources when a fake/uncertain verdict is detected.
     Only returns suggestions for Fake, Likely Fake, and Uncertain verdicts.
 
-    Query params:
-        verdict : str — the verdict from the analysis
-        limit   : int — number of suggestions to return (default 3)
+    Returns top mainstream sources + at least one fact-checker.
+    For scientific claims, scientific domains are included.
     """
     SUGGEST_FOR = {"Fake", "Likely Fake", "Uncertain"}
 
     if verdict not in SUGGEST_FOR:
         return {"suggest": False, "sources": []}
 
-    # Return top mainstream + fact-checking sources
-    results = (
+    # Top mainstream sources
+    mainstream = (
         db.query(ExternalRating)
         .filter(
             ExternalRating.credibility >= 80,
@@ -138,7 +137,7 @@ def suggest_trusted_sources(
         .all()
     )
 
-    # Always include at least one fact-checker if available
+    # Always include at least one fact-checker
     fact_checkers = (
         db.query(ExternalRating)
         .filter(ExternalRating.domain.in_(list(_FACT_CHECK_DOMAINS)))
@@ -147,11 +146,23 @@ def suggest_trusted_sources(
         .all()
     )
 
-    combined = {r.domain: r for r in results}
-    for fc in fact_checkers:
-        combined[fc.domain] = fc
+    # Always include at least one scientific source
+    science_sources = (
+        db.query(ExternalRating)
+        .filter(ExternalRating.domain.in_(list(_SCIENCE_DOMAINS)))
+        .order_by(ExternalRating.credibility.desc())
+        .limit(1)
+        .all()
+    )
 
-    suggestions = [_enrich(r) for r in list(combined.values())[:limit + 1]]
+    # Merge — domain as key prevents duplicates, priority: mainstream → fact-check → science
+    combined: dict[str, ExternalRating] = {r.domain: r for r in mainstream}
+    for r in fact_checkers:
+        combined[r.domain] = combined.get(r.domain) or r
+    for r in science_sources:
+        combined[r.domain] = combined.get(r.domain) or r
+
+    suggestions = [_enrich(r) for r in list(combined.values())[: limit + 1]]
 
     return {
         "suggest": True,
