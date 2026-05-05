@@ -16,15 +16,6 @@ STRONG_CLAIM_PATTERNS = [
 
 
 def llm_analyze(text: str):
-    """
-    Performs reasoning-based analysis of a claim.
-    Returns:
-        {
-            "reasoning": "...",
-            "detected_patterns": [],
-            "tone": "neutral/emotional/sensational"
-        }
-    """
     detected_patterns = []
 
     emotional_hits = detect_emotional_language(text)

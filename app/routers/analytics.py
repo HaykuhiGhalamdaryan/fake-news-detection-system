@@ -9,8 +9,6 @@ from app.database.models import AnalysisResult
 
 router = APIRouter()
 
-# Simple in-process cache — recompute analytics at most once per minute.
-# Avoids hitting PostgreSQL on every page refresh.
 _analytics_cache: dict = {}
 _cache_ttl_seconds = 60
 
@@ -19,14 +17,12 @@ _cache_ttl_seconds = 60
 def get_analytics(db: Session = Depends(get_db)):
     global _analytics_cache
 
-    # Return cached result if still fresh
     cached_at = _analytics_cache.get("cached_at")
     if cached_at and (datetime.utcnow() - cached_at).total_seconds() < _cache_ttl_seconds:
         return _analytics_cache["data"]
 
     today = datetime.utcnow().date()
 
-    # Single query — PostgreSQL computes all aggregates in one pass
     row = db.query(
         func.count(AnalysisResult.id).label("total"),
         func.sum(
@@ -65,6 +61,5 @@ def get_analytics(db: Session = Depends(get_db)):
         "analyses_today":          row.today_count or 0,
     }
 
-    # Store in cache
     _analytics_cache = {"cached_at": datetime.utcnow(), "data": data}
     return data

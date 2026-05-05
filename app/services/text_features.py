@@ -1,32 +1,11 @@
 # text_features.py
 
-"""Text Feature Analysis Service.
-
-Detects surface-level manipulation signals that are common in fake news:
-
-    1. ALL CAPS ratio          — shouting / panic inducing
-    2. Excessive punctuation   — "!!!", "???" patterns
-    3. Clickbait phrases       — "you won't believe", "shocking truth", etc.
-    4. Hyperbolic language     — "best ever", "worst in history", "100% proven"
-    5. Vague attribution       — "sources say", "people are saying", "experts claim"
-    6. Numerical exaggeration  — "millions of people", "thousands dead"
-    7. Title case abuse        — Every Single Word Capitalised In A Sentence
-
-Each signal contributes a weighted penalty to a final `manipulation_score`
-(0.0 – 1.0). The score and detected signals are returned to the caller so
-the verdict engine and explanation engine can use them.
-
-This module is intentionally fast (regex only, no ML models) so it adds
-negligible latency to each request.
-"""
-
 from __future__ import annotations
 
 import re
 import string
 
 
-# Clickbait phrases — ordered roughly by severity
 CLICKBAIT_PHRASES = [
     "you won't believe",
     "what they don't want you to know",
@@ -58,7 +37,6 @@ CLICKBAIT_PHRASES = [
     "absolute proof",
 ]
 
-# Hyperbolic superlatives
 HYPERBOLIC_PATTERNS = [
     r"\bbiggest (ever|in history|of all time)\b",
     r"\bworst (ever|in history|of all time)\b",
@@ -72,7 +50,6 @@ HYPERBOLIC_PATTERNS = [
     r"\bexperts (hate|fear|are shocked)\b",
 ]
 
-# Vague attribution — claims without verifiable sources
 VAGUE_ATTRIBUTION_PATTERNS = [
     r"\bsome people (say|think|believe|claim)\b",
     r"\bpeople are saying\b",
@@ -87,16 +64,14 @@ VAGUE_ATTRIBUTION_PATTERNS = [
     r"\baccording to (anonymous|unnamed|secret) sources?\b",
 ]
 
-# Numerical exaggeration markers
 NUMERICAL_EXAGGERATION_PATTERNS = [
     r"\b(millions|billions|thousands) of (people|lives|deaths|victims)\b",
     r"\b\d+\s*%\s*of (all|every|most)\b",
-    r"\bover \d{6,}\b",   # "over 1,000,000" style numbers
+    r"\bover \d{6,}\b",   
 ]
 
 
 def _caps_ratio(text: str) -> float:
-    """Fraction of alphabetic characters that are uppercase."""
     letters = [c for c in text if c.isalpha()]
     if not letters:
         return 0.0
@@ -104,12 +79,10 @@ def _caps_ratio(text: str) -> float:
 
 
 def _excessive_punctuation(text: str) -> bool:
-    """True if the text contains 3+ consecutive identical punctuation marks."""
     return bool(re.search(r"[!?]{3,}", text))
 
 
 def _punctuation_density(text: str) -> float:
-    """Ratio of exclamation/question marks to total characters."""
     if not text:
         return 0.0
     count = sum(1 for c in text if c in "!?")
@@ -117,10 +90,6 @@ def _punctuation_density(text: str) -> float:
 
 
 def _is_title_case_abuse(text: str) -> bool:
-    """
-    Detect every-word capitalisation in a sentence that is NOT a proper title.
-    Heuristic: ≥ 6 words and ≥ 80 % of words start with a capital letter.
-    """
     words = text.split()
     if len(words) < 6:
         return False
@@ -129,46 +98,26 @@ def _is_title_case_abuse(text: str) -> bool:
 
 
 def _find_phrases(text_lower: str, phrases: list[str]) -> list[str]:
-    """Return which phrases from the list appear in text_lower."""
     return [p for p in phrases if p in text_lower]
 
 
 def _find_patterns(text_lower: str, patterns: list[str]) -> list[str]:
-    """Return which regex patterns match in text_lower."""
     return [p for p in patterns if re.search(p, text_lower)]
 
-
-# Scoring weights
-# Each signal contributes this much to the raw manipulation score (0-1 sum)
 
 WEIGHTS = {
     "high_caps_ratio":            0.20,
     "excessive_punctuation":      0.15,
     "high_punctuation_density":   0.10,
     "title_case_abuse":           0.10,
-    "clickbait_phrase":           0.15,   # per phrase, capped at 0.30
-    "hyperbolic_language":        0.12,   # per match, capped at 0.24
-    "vague_attribution":          0.10,   # per match, capped at 0.20
-    "numerical_exaggeration":     0.08,   # per match, capped at 0.16
+    "clickbait_phrase":           0.15,   
+    "hyperbolic_language":        0.12,   
+    "vague_attribution":          0.10,   
+    "numerical_exaggeration":     0.08,   
 }
 
 
 def analyze_text_features(text: str) -> dict:
-    """
-    Analyse surface-level manipulation signals in *text*.
-
-    Returns
-    -------
-    {
-        "manipulation_score"  : float 0-1   overall signal strength
-        "manipulation_level"  : str         "LOW" | "MEDIUM" | "HIGH"
-        "signals"             : list[str]   machine-readable signal tags
-        "details"             : dict        human-readable breakdown
-        "clickbait_phrases"   : list[str]   matched clickbait phrases
-        "hyperbolic_matches"  : list[str]   matched hyperbole patterns
-        "vague_attributions"  : list[str]   matched vague attribution patterns
-    }
-    """
     text_lower = text.lower()
     raw_score = 0.0
     signals: list[str] = []
@@ -246,14 +195,4 @@ def analyze_text_features(text: str) -> dict:
 
 
 def get_manipulation_score_contribution(manipulation_score: float) -> float:
-    """
-    Convert manipulation_score into a fake_score contribution (0-1).
-
-    Used by the verdict engine to blend text features into the final score.
-    Scaled so even a HIGH manipulation score only nudges — never dominates.
-
-        manipulation_score 0.0  →  contribution 0.00
-        manipulation_score 0.5  →  contribution 0.15
-        manipulation_score 1.0  →  contribution 0.25
-    """
     return round(min(manipulation_score * 0.25, 0.25), 4)

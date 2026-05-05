@@ -8,17 +8,9 @@ def generate_explanation(
     signals: list[str] | None = None,
     verdict: str = "",
 ):
-    """
-    Generate a plain-language explanation for the analysis result.
-
-    verdict is now a required input so the explanation never contradicts
-    what is shown in the UI. The primary reason is derived from the verdict
-    first, and fake_score is used only for detail within that verdict bucket.
-    """
     signals = signals or []
     supporting_reasons = []
 
-    # Primary reason — driven by verdict to guarantee consistency with UI
     if verdict == "True":
         if "FACT_SUPPORTED" in signals:
             primary_reason = "The claim is supported by evidence found in trusted sources."
@@ -65,7 +57,6 @@ def generate_explanation(
             )
 
     else:
-        # Fallback — no verdict provided (legacy call)
         if fake_score > 0.65:
             primary_reason = "The machine learning model strongly predicts misinformation."
         elif fake_score > 0.45:
@@ -73,7 +64,6 @@ def generate_explanation(
         else:
             primary_reason = "The claim does not show strong indicators of misinformation."
 
-    # Supporting reasons — additive detail, never contradict primary
     if "EMOTIONAL_LANGUAGE" in signals:
         supporting_reasons.append(
             "The text uses emotionally charged language often associated with misinformation."

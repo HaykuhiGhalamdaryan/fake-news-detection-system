@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-/* ── Variables ─────────────────────────────────────────────────── */
 :root {
   --bg:        #F7F5F0;
   --surface:   #FFFFFF;
@@ -37,7 +36,6 @@
   --ff-mono:    'DM Mono', monospace;
 }
 
-/* ── Reset ─────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
@@ -52,10 +50,8 @@ img { display: block; max-width: 100%; }
 button { cursor: pointer; font-family: inherit; }
 a { color: inherit; text-decoration: none; }
 
-/* ── Layout ─────────────────────────────────────────────────────── */
 .shell { display: flex; flex-direction: column; min-height: 100vh; }
 
-/* ── Header ─────────────────────────────────────────────────────── */
 header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -93,12 +89,23 @@ nav { display: flex; gap: 4px; }
 .nav-btn:hover { background: var(--bg); color: var(--text); }
 .nav-btn.active { background: var(--accent-bg); color: var(--accent); }
 
-/* ── Pages ─────────────────────────────────────────────────────── */
+.lang-switcher {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 3px;
+}
+.lang-btn {
+  background: none; border: none;
+  padding: 4px 10px; border-radius: 6px;
+  font-size: .8rem; font-weight: 600; cursor: pointer;
+  color: var(--text-2); transition: background .15s, color .15s;
+}
+.lang-btn.active { background: var(--accent); color: #fff; }
+
 .page { display: none; flex: 1; }
 .page.active { display: block; }
 .container { max-width: 1140px; margin: 0 auto; padding: 40px 24px; }
 
-/* ── Page headings ─────────────────────────────────────────────── */
 .page-header { margin-bottom: 32px; }
 .page-header h1 {
   font-family: var(--ff-display);
@@ -108,7 +115,6 @@ nav { display: flex; gap: 4px; }
 }
 .page-header p { color: var(--text-2); margin-top: 6px; font-size: .95rem; }
 
-/* ── Cards ─────────────────────────────────────────────────────── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -117,17 +123,12 @@ nav { display: flex; gap: 4px; }
 }
 .card-body { padding: 24px; }
 
-/* ═══════════════════════════════════════════════════════════════
-   PAGE 1 — ANALYZER
-═══════════════════════════════════════════════════════════════ */
 .analyzer-grid {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
-@media (max-width: 900px) { .analyzer-grid { grid-template-columns: 1fr; } }
 
-/* Input panel */
 .textarea-wrap { position: relative; }
 #claim-input {
   width: 100%; min-height: 130px;
@@ -173,7 +174,6 @@ nav { display: flex; gap: 4px; }
 .analyze-btn.loading .btn-text { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Example pills */
 .examples { margin-top: 14px; }
 .examples-label { font-size: .78rem; color: var(--text-3); font-weight: 500; margin-bottom: 8px; letter-spacing: .04em; text-transform: uppercase; }
 .pills { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -185,7 +185,6 @@ nav { display: flex; gap: 4px; }
 }
 .pill:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
 
-/* Result panel */
 .result-empty {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; text-align: center;
@@ -195,7 +194,6 @@ nav { display: flex; gap: 4px; }
 .result-empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: .4; }
 .result-empty p { font-size: .9rem; }
 
-/* Verdict badge */
 .verdict-section {
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 24px;
@@ -224,7 +222,6 @@ nav { display: flex; gap: 4px; }
   transition: width .6s cubic-bezier(.4,0,.2,1);
 }
 
-/* Score grid */
 .scores-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 0; border-bottom: 1px solid var(--border);
@@ -241,7 +238,6 @@ nav { display: flex; gap: 4px; }
 }
 .score-label { font-size: .72rem; color: var(--text-3); margin-top: 4px; text-transform: uppercase; letter-spacing: .06em; font-weight: 500; }
 
-/* Sections inside result */
 .result-section { padding: 16px 24px; border-bottom: 1px solid var(--border); }
 .result-section:last-child { border-bottom: none; }
 .section-title {
@@ -254,7 +250,6 @@ nav { display: flex; gap: 4px; }
 }
 .explanation-supporting { font-size: .85rem; color: var(--text-2); }
 
-/* Signals */
 .signals-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .signal-tag {
   background: var(--bg); border: 1px solid var(--border);
@@ -265,7 +260,6 @@ nav { display: flex; gap: 4px; }
 .signal-tag.danger { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
 .signal-tag.positive { background: #DCFCE7; border-color: #BBF7D0; color: #166534; }
 
-/* Evidence */
 .evidence-box {
   background: var(--accent-bg); border: 1px solid #C7D9F5;
   border-radius: 8px; padding: 12px 14px;
@@ -274,7 +268,6 @@ nav { display: flex; gap: 4px; }
 }
 .evidence-source { font-size: .75rem; color: var(--text-3); margin-top: 6px; font-family: var(--ff-mono); }
 
-/* Risk badge */
 .risk-badge {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 4px 10px; border-radius: 6px; font-size: .8rem; font-weight: 600;
@@ -283,7 +276,6 @@ nav { display: flex; gap: 4px; }
 .risk-badge.MEDIUM { background: #FEF3C7; color: #92400E; }
 .risk-badge.HIGH   { background: #FEE2E2; color: #991B1B; }
 
-/* Sentiment */
 .sentiment-row { display: flex; align-items: center; gap: 10px; }
 .sentiment-pill {
   padding: 3px 10px; border-radius: 20px; font-size: .8rem; font-weight: 600;
@@ -291,9 +283,6 @@ nav { display: flex; gap: 4px; }
 .sentiment-pill.POSITIVE { background: #DCFCE7; color: #166534; }
 .sentiment-pill.NEGATIVE { background: #FEE2E2; color: #991B1B; }
 
-/* ═══════════════════════════════════════════════════════════════
-   PAGE 2 — HISTORY
-═══════════════════════════════════════════════════════════════ */
 .history-toolbar {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
@@ -366,9 +355,6 @@ nav { display: flex; gap: 4px; }
 .empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: .3; }
 .empty-state p { font-size: .9rem; }
 
-/* ═══════════════════════════════════════════════════════════════
-   PAGE 3 — ANALYTICS
-═══════════════════════════════════════════════════════════════ */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -402,7 +388,6 @@ nav { display: flex; gap: 4px; }
 }
 .chart-title { font-size: .85rem; font-weight: 600; color: var(--text-2); margin-bottom: 16px; text-transform: uppercase; letter-spacing: .06em; }
 
-/* Bar chart */
 .bar-chart { display: flex; flex-direction: column; gap: 10px; }
 .bar-row { display: flex; align-items: center; gap: 12px; }
 .bar-label { font-size: .8rem; color: var(--text-2); width: 90px; text-align: right; flex-shrink: 0; }
@@ -410,22 +395,17 @@ nav { display: flex; gap: 4px; }
 .bar-fill { height: 100%; border-radius: 4px; transition: width .8s cubic-bezier(.4,0,.2,1); }
 .bar-count { font-size: .8rem; color: var(--text-3); width: 36px; text-align: right; flex-shrink: 0; font-family: var(--ff-mono); }
 
-/* Donut chart */
 .donut-wrap { display: flex; align-items: center; gap: 24px; }
 .donut-svg { flex-shrink: 0; }
 .donut-legend { display: flex; flex-direction: column; gap: 8px; }
 .legend-item { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--text-2); }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-/* Metric rows */
 .metric-list { display: flex; flex-direction: column; gap: 12px; }
 .metric-row { display: flex; align-items: center; justify-content: space-between; }
 .metric-name { font-size: .875rem; color: var(--text-2); }
 .metric-value { font-size: .875rem; font-weight: 600; color: var(--text); font-family: var(--ff-mono); }
 
-/* ═══════════════════════════════════════════════════════════════
-   PAGE 4 — ABOUT
-═══════════════════════════════════════════════════════════════ */
 .about-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; align-items: start; }
 @media (max-width: 800px) { .about-grid { grid-template-columns: 1fr; } }
 
@@ -468,7 +448,6 @@ nav { display: flex; gap: 4px; }
 }
 .vg-desc { font-size: .82rem; color: var(--text-2); }
 
-/* ── Toast ─────────────────────────────────────────────────────── */
 .toast {
   position: fixed; bottom: 24px; right: 24px;
   background: var(--text); color: #fff;
@@ -482,7 +461,6 @@ nav { display: flex; gap: 4px; }
 }
 .toast.show { transform: translateY(0); opacity: 1; }
 
-/* ── Loading overlay ───────────────────────────────────────────── */
 .loading-overlay {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 48px;
@@ -497,7 +475,6 @@ nav { display: flex; gap: 4px; }
   margin-bottom: 14px;
 }
 
-/* ── Input mode tabs ───────────────────────────────────────────── */
 .input-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
 .input-tab {
   background: var(--bg); border: 1.5px solid var(--border);
@@ -508,7 +485,6 @@ nav { display: flex; gap: 4px; }
 .input-tab.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
 .input-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
 
-/* ── URL input ─────────────────────────────────────────────────── */
 .url-input-wrap { display: flex; gap: 10px; align-items: stretch; }
 #url-input {
   flex: 1; padding: 12px 16px;
@@ -529,7 +505,6 @@ nav { display: flex; gap: 4px; }
 }
 .url-meta strong { color: var(--text); display: block; margin-bottom: 2px; }
 
-/* ── Article warning banner ────────────────────────────────────── */
 .article-warning {
   display: flex; align-items: flex-start; gap: 10px;
   background: #FFFBEB; border: 1px solid #FCD34D;
@@ -539,7 +514,6 @@ nav { display: flex; gap: 4px; }
 }
 .article-warning-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
 
-/* ── Source analysis panel ─────────────────────────────────────── */
 .source-panel { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .source-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -574,7 +548,6 @@ nav { display: flex; gap: 4px; }
 .source-verified { display: flex; align-items: center; gap: 6px; font-size: .76rem; color: var(--text-3); margin-top: 8px; }
 .source-verified-dot { width: 7px; height: 7px; border-radius: 50%; background: #16A34A; flex-shrink: 0; }
 
-/* ── Source-only result panel ──────────────────────────────────── */
 .source-only-panel { padding: 28px 24px; }
 .source-only-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .source-only-icon {
@@ -585,7 +558,6 @@ nav { display: flex; gap: 4px; }
 .source-only-title { font-family: var(--ff-display); font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
 .source-only-sub { font-size: .85rem; color: var(--text-2); }
 
-/* ── Utility ───────────────────────────────────────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 .mt-4 { margin-top: 16px; }
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
@@ -594,7 +566,6 @@ nav { display: flex; gap: 4px; }
 <body>
 <div class="shell">
 
-<!-- ── HEADER ─────────────────────────────────────────────────── -->
 <header>
   <div class="header-inner">
     <div class="logo" onclick="navigate('analyzer')">
@@ -602,57 +573,50 @@ nav { display: flex; gap: 4px; }
       TruthLens
     </div>
     <nav>
-      <button class="nav-btn active" data-page="analyzer"  onclick="navigate('analyzer')">Analyzer</button>
-      <button class="nav-btn" data-page="history"   onclick="navigate('history')">History</button>
-      <button class="nav-btn" data-page="analytics" onclick="navigate('analytics')">Analytics</button>
-      <button class="nav-btn" data-page="about"     onclick="navigate('about')">About</button>
+      <button class="nav-btn active" data-page="analyzer"  onclick="navigate('analyzer')"  data-i18n="nav_analyzer">Analyzer</button>
+      <button class="nav-btn" data-page="history"   onclick="navigate('history')"   data-i18n="nav_history">History</button>
+      <button class="nav-btn" data-page="analytics" onclick="navigate('analytics')" data-i18n="nav_analytics">Analytics</button>
+      <button class="nav-btn" data-page="about"     onclick="navigate('about')"     data-i18n="nav_about">About</button>
     </nav>
+    <div class="lang-switcher">
+      <button class="lang-btn active" id="lang-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn"        id="lang-hy" onclick="setLang('hy')">ՀՅ</button>
+    </div>
   </div>
 </header>
 
-<!-- ══════════════════════════════════════════════════════════════
-     PAGE 1 — ANALYZER
-═══════════════════════════════════════════════════════════════ -->
 <main class="page active" id="page-analyzer">
   <div class="container">
     <div class="page-header">
-      <h1>Analyze a Claim</h1>
-      <p>Paste any news headline, article, or claim to check its credibility.</p>
+      <h1 data-i18n="analyzer_title">Analyze a Claim</h1>
+      <p data-i18n="analyzer_sub">Paste any news headline, article, or claim to check its credibility.</p>
     </div>
     <div class="analyzer-grid">
 
-      <!-- Input -->
       <div class="input-panel">
         <div class="input-tabs">
-          <button class="input-tab active" id="tab-text" onclick="switchTab('text')">✏️ Paste Text</button>
-          <button class="input-tab" id="tab-url" onclick="switchTab('url')">🔗 Analyze URL</button>
+          <button class="input-tab active" id="tab-text" onclick="switchTab('text')" data-i18n="tab_text">✏️ Paste Text</button>
+          <button class="input-tab" id="tab-url" onclick="switchTab('url')" data-i18n="tab_url">🔗 Analyze URL</button>
         </div>
 
-        <!-- Text mode -->
         <div id="mode-text">
           <div class="textarea-wrap">
             <textarea id="claim-input" placeholder="Paste a news headline, article excerpt, or any claim here…" oninput="updateCharCount()"></textarea>
             <div class="textarea-footer">
-              <span class="char-count" id="char-count">0 chars</span>
+              <span class="char-count" id="char-count">0 <span data-i18n="chars">chars</span></span>
               <button class="analyze-btn" id="analyze-btn" onclick="analyzeText()">
                 <div class="spinner"></div>
-                <span class="btn-text">Analyze →</span>
+                <span class="btn-text" data-i18n="btn_analyze">Analyze →</span>
               </button>
             </div>
           </div>
           <div class="examples mt-4">
-            <div class="examples-label">Try an example</div>
-            <div class="pills">
-              <div class="pill" onclick="setExample(this)">Yerevan is the capital of Armenia.</div>
-              <div class="pill" onclick="setExample(this)">Armenia is located in South America.</div>
-              <div class="pill" onclick="setExample(this)">Scientists discover cure for all cancers!</div>
-              <div class="pill" onclick="setExample(this)">The government is hiding the truth about vaccines!</div>
-              <div class="pill" onclick="setExample(this)">The Earth orbits the Sun.</div>
+            <div class="examples-label" data-i18n="try_example">Try an example</div>
+            <div class="pills" id="example-pills">
             </div>
           </div>
         </div>
 
-        <!-- URL mode -->
         <div id="mode-url" style="display:none">
           <div class="url-input-wrap">
             <input type="url" id="url-input"
@@ -662,24 +626,22 @@ nav { display: flex; gap: 4px; }
             />
             <button class="analyze-btn" id="analyze-url-btn" onclick="analyzeURL()" disabled>
               <div class="spinner"></div>
-              <span class="btn-text">Fetch &amp; Analyze →</span>
+              <span class="btn-text" data-i18n="btn_fetch">Fetch &amp; Analyze →</span>
             </button>
           </div>
-          <div class="url-hint" id="url-hint">Paste any news article URL — the text will be extracted and analyzed automatically.</div>
+          <div class="url-hint" id="url-hint" data-i18n="url_hint">Paste any news article URL — the text will be extracted and analyzed automatically.</div>
           <div class="url-meta" id="url-meta" style="display:none"></div>
         </div>
       </div>
 
-      <!-- Result -->
       <div>
         <div class="card" id="result-card">
           <div class="result-empty" id="result-empty">
             <div class="result-empty-icon">📋</div>
-            <p>Your analysis results will appear here.</p>
+            <p data-i18n="result_empty">Your analysis results will appear here.</p>
           </div>
           <div id="result-content" style="display:none"></div>
         </div>
-        <!-- Trusted sources suggestion (shown for Fake / Likely Fake / Uncertain) -->
         <div id="suggestion-box" style="display:none"></div>
       </div>
 
@@ -687,109 +649,66 @@ nav { display: flex; gap: 4px; }
   </div>
 </main>
 
-<!-- ══════════════════════════════════════════════════════════════
-     PAGE 2 — HISTORY
-═══════════════════════════════════════════════════════════════ -->
 <main class="page" id="page-history">
   <div class="container">
     <div class="page-header">
-      <h1>Analysis History</h1>
-      <p>Browse all previously analyzed claims.</p>
+      <h1 data-i18n="history_title">Analysis History</h1>
+      <p data-i18n="history_sub">Browse all previously analyzed claims.</p>
     </div>
     <div class="history-toolbar">
       <div class="filter-row" id="filter-row">
-        <button class="filter-btn active" onclick="filterHistory(null, this)">All</button>
-        <button class="filter-btn" onclick="filterHistory('True', this)">True</button>
-        <button class="filter-btn" onclick="filterHistory('Likely True', this)">Likely True</button>
-        <button class="filter-btn" onclick="filterHistory('Uncertain', this)">Uncertain</button>
-        <button class="filter-btn" onclick="filterHistory('Likely Fake', this)">Likely Fake</button>
-        <button class="filter-btn" onclick="filterHistory('Fake', this)">Fake</button>
       </div>
-      <button class="refresh-btn" onclick="loadHistory()">↻ Refresh</button>
+      <button class="refresh-btn" onclick="loadHistory()" data-i18n-html="btn_refresh">↻ Refresh</button>
     </div>
     <div id="history-list" class="history-list"></div>
     <div class="pagination" id="pagination"></div>
   </div>
 </main>
 
-<!-- ══════════════════════════════════════════════════════════════
-     PAGE 3 — ANALYTICS
-═══════════════════════════════════════════════════════════════ -->
 <main class="page" id="page-analytics">
   <div class="container">
     <div class="page-header">
       <div class="flex-between">
         <div>
-          <h1>Analytics</h1>
-          <p>Aggregate statistics from all analyzed claims.</p>
+          <h1 data-i18n="analytics_title">Analytics</h1>
+          <p data-i18n="analytics_sub">Aggregate statistics from all analyzed claims.</p>
         </div>
-        <button class="refresh-btn" onclick="loadAnalytics()">↻ Refresh</button>
+        <button class="refresh-btn" onclick="loadAnalytics()" data-i18n-html="btn_refresh">↻ Refresh</button>
       </div>
     </div>
     <div id="analytics-content">
-      <div class="loading-overlay"><div class="big-spinner"></div><span>Loading analytics…</span></div>
+      <div class="loading-overlay"><div class="big-spinner"></div><span data-i18n="loading_analytics">Loading analytics…</span></div>
     </div>
-    <!-- Trusted Sources section -->
     <div id="trusted-sources-content" style="margin-top:32px"></div>
   </div>
 </main>
 
-<!-- ══════════════════════════════════════════════════════════════
-     PAGE 4 — ABOUT
-═══════════════════════════════════════════════════════════════ -->
 <main class="page" id="page-about">
   <div class="container">
     <div class="page-header">
-      <h1>About TruthLens</h1>
-      <p>A multi-signal fake news detection system built for academic research.</p>
+      <h1 data-i18n="about_title">About TruthLens</h1>
+      <p data-i18n="about_sub">A multi-signal fake news detection system built for academic research.</p>
     </div>
     <div class="about-grid">
       <div>
-        <div class="card card-body prose">
-          <h2>What is TruthLens?</h2>
-          <p>TruthLens is a fake news detection system that combines machine learning models, semantic fact-checking, and linguistic analysis to assess the credibility of news claims and articles.</p>
-          <p>Built as a Bachelor's thesis project, it uses an ensemble of fine-tuned RoBERTa models alongside Wikipedia, NewsAPI, and DuckDuckGo for multi-source evidence retrieval.</p>
-
-          <h2>How It Works</h2>
-          <div class="pipeline-steps">
-            <div class="step"><div class="step-num">1</div><div class="step-content"><h3>Text Chunking</h3><p>Long articles are split into overlapping 300-word chunks so no content is silently truncated by the model's 512-token limit.</p></div></div>
-            <div class="step"><div class="step-num">2</div><div class="step-content"><h3>ML Ensemble Scoring</h3><p>Three fine-tuned transformer models score each chunk. Scores are weighted 50/35/15 and aggregated into a single fake_probability.</p></div></div>
-            <div class="step"><div class="step-num">3</div><div class="step-content"><h3>Text Feature Analysis</h3><p>8 surface-level signals are detected: ALL CAPS, excessive punctuation, clickbait phrases, hyperbolic language, vague attribution, and more.</p></div></div>
-            <div class="step"><div class="step-num">4</div><div class="step-content"><h3>Multi-Source Fact Checking</h3><p>Wikipedia, NewsAPI, and DuckDuckGo are queried in parallel. Sentence Transformers compute semantic similarity between the claim and found evidence.</p></div></div>
-            <div class="step"><div class="step-num">5</div><div class="step-content"><h3>Source Credibility</h3><p>The article's domain is checked against a verified database of 80+ sources, with WHOIS fallback for unknown domains.</p></div></div>
-            <div class="step"><div class="step-num">6</div><div class="step-content"><h3>Hybrid Verdict</h3><p>A two-track decision engine combines all signals into a final verdict: True, Likely True, Uncertain, Likely Fake, or Fake.</p></div></div>
-          </div>
-
-          <h2>Verdict Scale</h2>
-          <div class="verdict-guide">
-            <div class="vg-row"><span class="vg-label verdict-badge true" style="padding:3px 10px;font-size:.78rem">True</span><span class="vg-desc">Strong fact support + low fake probability</span></div>
-            <div class="vg-row"><span class="vg-label verdict-badge likely-true" style="padding:3px 10px;font-size:.78rem">Likely True</span><span class="vg-desc">Moderate evidence of truth</span></div>
-            <div class="vg-row"><span class="vg-label verdict-badge uncertain" style="padding:3px 10px;font-size:.78rem">Uncertain</span><span class="vg-desc">Conflicting or insufficient signals</span></div>
-            <div class="vg-row"><span class="vg-label verdict-badge likely-fake" style="padding:3px 10px;font-size:.78rem">Likely Fake</span><span class="vg-desc">Elevated fake probability + manipulation signals</span></div>
-            <div class="vg-row"><span class="vg-label verdict-badge fake" style="padding:3px 10px;font-size:.78rem">Fake</span><span class="vg-desc">High fake probability + weak/contradicting evidence</span></div>
-          </div>
+        <div class="card card-body prose" id="about-main-prose">
         </div>
       </div>
-
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card card-body">
-          <div class="chart-title">Tech Stack</div>
+          <div class="chart-title" data-i18n="about_tech_title">Tech Stack</div>
           <div class="tech-stack">
-            <div class="tech-item"><span class="tech-icon">⚡</span><div><div class="tech-name">FastAPI</div><div class="tech-desc">Python REST API backend</div></div></div>
-            <div class="tech-item"><span class="tech-icon">🤖</span><div><div class="tech-name">Transformers</div><div class="tech-desc">RoBERTa fake-news models</div></div></div>
-            <div class="tech-item"><span class="tech-icon">🔍</span><div><div class="tech-name">Sentence Transformers</div><div class="tech-desc">Semantic similarity scoring</div></div></div>
-            <div class="tech-item"><span class="tech-icon">📰</span><div><div class="tech-name">NewsAPI + Wikipedia</div><div class="tech-desc">Multi-source fact checking</div></div></div>
-            <div class="tech-item"><span class="tech-icon">🗄️</span><div><div class="tech-name">SQLite + SQLAlchemy</div><div class="tech-desc">Analysis result storage</div></div></div>
-            <div class="tech-item"><span class="tech-icon">🎨</span><div><div class="tech-name">HTML / CSS / JS</div><div class="tech-desc">Vanilla frontend (this page)</div></div></div>
+            <div class="tech-item"><span class="tech-icon">⚡</span><div><div class="tech-name">FastAPI</div><div class="tech-desc" data-i18n="tech_fastapi">Python REST API backend</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🤖</span><div><div class="tech-name">Transformers</div><div class="tech-desc" data-i18n="tech_transformers">RoBERTa fake-news models</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🔍</span><div><div class="tech-name">Sentence Transformers</div><div class="tech-desc" data-i18n="tech_sent_transformers">Semantic similarity scoring</div></div></div>
+            <div class="tech-item"><span class="tech-icon">📰</span><div><div class="tech-name">NewsAPI + Wikipedia</div><div class="tech-desc" data-i18n="tech_newsapi">Multi-source fact checking</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🗄️</span><div><div class="tech-name">PostgreSQL + SQLAlchemy</div><div class="tech-desc" data-i18n="tech_sqlite">Analysis result storage</div></div></div>
+            <div class="tech-item"><span class="tech-icon">🎨</span><div><div class="tech-name">HTML / CSS / JS</div><div class="tech-desc" data-i18n="tech_frontend">Vanilla frontend (this page)</div></div></div>
           </div>
         </div>
         <div class="card card-body">
-          <div class="chart-title">Limitations</div>
-          <div class="prose">
-            <p>• Models are English-only</p>
-            <p>• Short claims may score conservatively</p>
-            <p>• Satire is difficult to detect reliably</p>
-            <p>• Very recent events may lack Wikipedia coverage</p>
+          <div class="chart-title" data-i18n="about_limits_title">Limitations</div>
+          <div class="prose" id="about-limitations">
           </div>
         </div>
       </div>
@@ -797,20 +716,334 @@ nav { display: flex; gap: 4px; }
   </div>
 </main>
 
-</div><!-- .shell -->
+</div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// API base URL — dynamically derived from the page's own origin so the
-// frontend works without change on any server (local dev or production).
-// Falls back to localhost only when opened directly as a file (origin=null).
 const API = (window.location.origin && window.location.origin !== 'null')
   ? window.location.origin
   : 'http://127.0.0.1:8000';
 
-/* ── Navigation ───────────────────────────────────────────────── */
+const i18n = {
+  en: {
+    nav_analyzer:   "Analyzer",
+    nav_history:    "History",
+    nav_analytics:  "Analytics",
+    nav_about:      "About",
+
+    analyzer_title: "Analyze a Claim",
+    analyzer_sub:   "Paste any news headline, article, or claim to check its credibility.",
+    tab_text:       "✏️ Paste Text",
+    tab_url:        "🔗 Analyze URL",
+    try_example:    "Try an example",
+    result_empty:   "Your analysis results will appear here.",
+    btn_analyze:    "Analyze →",
+    btn_fetch:      "Fetch & Analyze →",
+    btn_refresh:    "↻ Refresh",
+    chars:          "chars",
+    input_placeholder: "Paste a news headline, article excerpt, or any claim here…",
+
+    example_1: "Yerevan is the capital of Armenia.",
+    example_2: "Armenia is located in South America.",
+    example_3: "Scientists discover cure for all cancers!",
+    example_4: "The government is hiding the truth about vaccines!",
+    example_5: "The Earth orbits the Sun.",
+
+    section_explanation:    "Explanation",
+    section_signals:        "Signals",
+    section_evidence:       "Best Evidence Found",
+    section_sentiment:      "Sentiment",
+    section_source:         "Source Analysis",
+    section_patterns:       "Detected Patterns",
+    label_credibility:      "Credibility",
+    label_confidence:       "Confidence",
+    label_risk:             "Risk",
+    label_fake_prob:        "Fake probability",
+    label_source:           "Source",
+    label_risk_score:       "Risk Score",
+    label_sentiment:        "Sentiment",
+    label_sources:          "Sources",
+    label_support:          "Support",
+    no_signals:             "No signals detected",
+    no_evidence:            "No evidence found",
+    neutral_tone:           "Neutral tone",
+    emotional_tone:         "⚠️ Emotional tone detected",
+
+    negation_note:     "This claim contains negation. The system searched for the affirmative version and <strong>inverted the result</strong> — the verdict reflects the original negated claim.",
+    translation_note:  "Armenian text detected. The content was <strong>automatically translated to English</strong> before analysis. Results reflect the translated version.",
+    translation_fail:  "Armenian text detected but translation failed — analysis ran on original text. Accuracy may be reduced.",
+    verified_source:   "Verified — in credibility database",
+    unknown_source:    "○ Unknown source — estimated from domain analysis",
+    homepage_tip:      "💡 This URL appears to be a news source homepage rather than a specific article. To analyze article content, paste the URL of a specific news story.",
+    article_extracted: "Article extracted successfully",
+    view_source:       "View source",
+    source_only_sub:   "Source credibility analysis — no article detected",
+
+    url_hint:         "Paste any news article URL — the text will be extracted and analyzed automatically.",
+    url_hint_invalid: "URL must start with http:// or https://",
+
+    history_title:   "Analysis History",
+    history_sub:     "Browse all previously analyzed claims.",
+    filter_all:      "All",
+    filter_true:     "True",
+    filter_likely_true:  "Likely True",
+    filter_uncertain:    "Uncertain",
+    filter_likely_fake:  "Likely Fake",
+    filter_fake:     "Fake",
+    no_analyses:     "No analyses found.",
+    loading_history: "Loading…",
+    page_label:      "Page",
+    deleted_ok:      "Analysis deleted.",
+    deleted_fail:    "Delete failed.",
+    delete_confirm:  "Delete this analysis?",
+    prev_page:       "Prev",
+    next_page:       "Next",
+
+    analytics_title: "Analytics",
+    analytics_sub:   "Aggregate statistics from all analyzed claims.",
+    loading_analytics: "Loading analytics…",
+    stat_total:      "Total Analyses",
+    stat_today:      "today",
+    stat_fake:       "Fake Detected",
+    stat_real:       "Real Verified",
+    stat_high_risk:  "High Risk",
+    stat_medium:     "medium",
+    stat_low:        "low",
+    stat_of_total:   "of total",
+    chart_verdict:   "Verdict Distribution",
+    chart_risk:      "Risk Distribution",
+    chart_scores:    "Average Scores",
+    metric_credibility:   "Avg. Credibility Score",
+    metric_fake_prob:     "Avg. Fake Probability",
+    metric_risk_score:    "Avg. Risk Score",
+    metric_today:         "Analyses Today",
+    trusted_title:        "Trusted Sources",
+    trusted_sub:          "sources with credibility ≥ 70",
+    trusted_loading:      "Loading trusted sources…",
+    trusted_verified:     "✓ Verified",
+    verify_msg_title:     "💡 Verify with trusted sources",
+
+    about_title:     "About TruthLens",
+    about_sub:       "A multi-signal fake news detection system built for academic research.",
+    about_tech_title:   "Tech Stack",
+    about_limits_title: "Limitations",
+    tech_fastapi:         "Python REST API backend",
+    tech_transformers:    "RoBERTa fake-news models",
+    tech_sent_transformers: "Semantic similarity scoring",
+    tech_newsapi:         "Multi-source fact checking",
+    tech_sqlite:          "Analysis result storage",
+    tech_frontend:        "Vanilla frontend (this page)",
+    about_what_title:     "What is TruthLens?",
+    about_what_p1:        "TruthLens is a fake news detection system that combines machine learning models, semantic fact-checking, and linguistic analysis to assess the credibility of news claims and articles.",
+    about_what_p2:        "Built as a Bachelor's thesis project, it uses an ensemble of fine-tuned RoBERTa models alongside Wikipedia and NewsAPI for multi-source evidence retrieval.",
+    about_how_title:      "How It Works",
+    step1_title: "Text Chunking",
+    step1_desc:  "Long articles are split into overlapping 300-word chunks so no content is silently truncated by the model's 512-token limit.",
+    step2_title: "ML Ensemble Scoring",
+    step2_desc:  "Three fine-tuned transformer models score each chunk. Scores are weighted 50/35/15 and aggregated into a single fake_probability.",
+    step3_title: "Text Feature Analysis",
+    step3_desc:  "8 surface-level signals are detected: ALL CAPS, excessive punctuation, clickbait phrases, hyperbolic language, vague attribution, and more.",
+    step4_title: "Multi-Source Fact Checking",
+    step4_desc:  "Wikipedia and NewsAPI are queried in parallel. Sentence Transformers compute semantic similarity between the claim and found evidence.",
+    step5_title: "Source Credibility",
+    step5_desc:  "The article's domain is checked against a verified database of 80+ sources, with WHOIS fallback for unknown domains.",
+    step6_title: "Hybrid Verdict",
+    step6_desc:  "A two-track decision engine combines all signals into a final verdict: True, Likely True, Uncertain, Likely Fake, or Fake.",
+    about_verdict_title:  "Verdict Scale",
+    verdict_true_desc:        "Strong fact support + low fake probability",
+    verdict_likely_true_desc: "Moderate evidence of truth",
+    verdict_uncertain_desc:   "Conflicting or insufficient signals",
+    verdict_likely_fake_desc: "Elevated fake probability + manipulation signals",
+    verdict_fake_desc:        "High fake probability + weak/contradicting evidence",
+    limit_1: "• Models are English-only",
+    limit_2: "• Short claims may score conservatively",
+    limit_3: "• Satire is difficult to detect reliably",
+    limit_4: "• Very recent events may lack Wikipedia coverage",
+
+    loading:      "Analyzing…",
+    err_no_text:  "Please enter some text first.",
+    err_api:      "Could not connect to API. Is the server running?",
+    err_url:      "Could not analyze URL.",
+  },
+
+  hy: {
+    nav_analyzer:   "Վերլուծիչ",
+    nav_history:    "Պատմություն",
+    nav_analytics:  "Վիճակագրություն",
+    nav_about:      "Մեր մասին",
+
+    analyzer_title: "Վերլուծել պնդումը",
+    analyzer_sub:   "Տեղադրեք ցանկացած լրատվական վերնագիր, հոդված կամ պնդում՝ ստուգելու վստահելիությունը։",
+    tab_text:       "✏️ Տեղադրել տեքստ",
+    tab_url:        "🔗 Վերլուծել URL",
+    try_example:    "Փորձեք օրինակ",
+    result_empty:   "Վերլուծության արդյունքները կհայտնվեն այստեղ։",
+    btn_analyze:    "Վերլուծել →",
+    btn_fetch:      "Ստանալ և վերլուծել →",
+    btn_refresh:    "↻ Թարմացնել",
+    chars:          "նիշ",
+    input_placeholder: "Տեղադրեք լրատվական վերնագիր, հոդվածի հատված կամ ցանկացած պնդում…",
+
+    example_1: "Երևանը Հայաստանի մայրաքաղաքն է։",
+    example_2: "Հայաստանը գտնվում է Հարավային Ամերիկայում։",
+    example_3: "Գիտնականները հայտնաբերեցին բոլոր քաղցկեղների բուժումը։",
+    example_4: "Կառավարությունը թաքցնում է ճշմարտությունը պատվաստումների մասին։",
+    example_5: "Երկիրը պտտվում է Արեգակի շուրջ։",
+
+    section_explanation:    "Բացատրություն",
+    section_signals:        "Ազդանշաններ",
+    section_evidence:       "Գտնված ապացույց",
+    section_sentiment:      "Տոնայնություն",
+    section_source:         "Աղբյուրի վերլուծություն",
+    section_patterns:       "Հայտնաբերված ձևեր",
+    label_credibility:      "Վստահելիություն",
+    label_confidence:       "Վստահություն",
+    label_risk:             "Ռիսկ",
+    label_fake_prob:        "Կեղծ լինելու հավանականություն",
+    label_source:           "Աղբյուր",
+    label_risk_score:       "Ռիսկի գնահատական",
+    label_sentiment:        "Տոնայնություն",
+    label_sources:          "Աղբյուրներ",
+    label_support:          "Աջակցություն",
+    no_signals:             "Ազդանշաններ չեն հայտնաբերվել",
+    no_evidence:            "Ապացույց չի գտնվել",
+    neutral_tone:           "Չեզոք տոն",
+    emotional_tone:         "⚠️ Հուզական տոն հայտնաբերված",
+
+    negation_note:     "Պնդումը պարունակում է ժխտում։ Համակարգը ստուգել է դրական տարբերակը և <strong>շրջել արդյունքը</strong> — վճիռն արտացոլում է սկզբնական ժխտված պնդումը։",
+    translation_note:  "Հայերեն տեքստ հայտնաբերվեց։ Բովանդակությունը <strong>ավտոմատ թարգմանվեց անգլերեն</strong> վերլուծությունից առաջ։ Արդյունքները արտացոլում են թարգմանված տարբերակը։",
+    translation_fail:  "Հայերեն տեքստ հայտնաբերվեց, սակայն թարգմանությունը ձախողվեց — վերլուծությունն անցկացվել է բնօրինակ տեքստի վրա։ Ճշգրտությունը կարող է նվազած լինել։",
+    verified_source:   "Հաստատված — գտնվում է վստահելիության բազայում",
+    unknown_source:    "○ Անհայտ աղբյուր — գնահատված դոմենի վերլուծությամբ",
+    homepage_tip:      "💡 Այս URL-ը թվում է լրատվական կայքի գլխավոր էջ, ոչ թե կոնկրետ հոդված։ Հոդվածի բովանդակությունը վերլուծելու համար տեղադրեք կոնկրետ հոդվածի URL-ը։",
+    article_extracted: "Հոդվածը հաջողությամբ ստացվեց",
+    view_source:       "Դիտել աղբյուրը",
+    source_only_sub:   "Աղբյուրի վստահելիության վերլուծություն — հոդված չի հայտնաբերվել",
+
+    url_hint:         "Տեղադրեք ցանկացած լրատվական հոդվածի URL — տեքստն ավտոմատ կստացվի ու կվերլուծվի։",
+    url_hint_invalid: "URL-ը պետք է սկսվի http:// կամ https://-ով",
+
+    history_title:   "Վերլուծությունների պատմություն",
+    history_sub:     "Դիտեք բոլոր նախկինում վերլուծված պնդումները։",
+    filter_all:      "Բոլորը",
+    filter_true:     "Ճիշտ",
+    filter_likely_true:  "Հավանաբար ճիշտ",
+    filter_uncertain:    "Անորոշ",
+    filter_likely_fake:  "Հավանաբար կեղծ",
+    filter_fake:     "Կեղծ",
+    no_analyses:     "Վերլուծություններ չեն գտնվել։",
+    loading_history: "Բեռնվում է…",
+    page_label:      "Էջ",
+    deleted_ok:      "Վերլուծությունը ջնջվել է",
+    deleted_fail:    "Չստացվեց ջնջել",
+    delete_confirm:  "Ջնջե՞լ այս վերլուծությունը:",
+    prev_page:       "Նախ.",
+    next_page:       "Հաջ.",
+
+    analytics_title: "Վիճակագրություն",
+    analytics_sub:   "Հավաքական վիճակագրություն բոլոր վերլուծություններից։",
+    loading_analytics: "Վիճակագրությունը բեռնվում է…",
+    stat_total:      "Ընդամենը վերլուծություն",
+    stat_today:      "այսօր",
+    stat_fake:       "Կեղծ հայտնաբերված",
+    stat_real:       "Ճիշտ հաստատված",
+    stat_high_risk:  "Բարձր ռիսկ",
+    stat_medium:     "միջին",
+    stat_low:        "ցածր",
+    stat_of_total:   "ընդհանուրի",
+    chart_verdict:   "Վճիռների բաշխում",
+    chart_risk:      "Ռիսկի բաշխում",
+    chart_scores:    "Միջին գնահատականներ",
+    metric_credibility:   "Միջ. վստահելիության գնահ.",
+    metric_fake_prob:     "Միջ. կեղծ լինելու հավան.",
+    metric_risk_score:    "Միջ. ռիսկի գնահատական",
+    metric_today:         "Այսօրվա վերլուծություններ",
+    trusted_title:        "Վստահելի աղբյուրներ",
+    trusted_sub:          "աղբյուր՝ վստահելիությամբ ≥ 70",
+    trusted_loading:      "Վստահելի աղբյուրները բեռնվում են…",
+    trusted_verified:     "✓ Հաստատված",
+    verify_msg_title:     "💡 Ստուգեք վստահելի աղբյուրներում",
+
+    about_title:     "TruthLens-ի մասին",
+    about_sub:       "Բազմաազդանշան կեղծ լուրերի հայտնաբերման համակարգ՝ ստեղծված ակադեմիական հետազոտությունների համար։",
+    about_tech_title:   "Տեխնոլոգիաներ",
+    about_limits_title: "Սահմանափակումներ",
+    tech_fastapi:         "Python REST API backend",
+    tech_transformers:    "RoBERTa կեղծ-լուրերի մոդելներ",
+    tech_sent_transformers: "Իմաստային նմանության գնահատում",
+    tech_newsapi:         "Բազմաաղբյուր փաստերի ստուգում",
+    tech_sqlite:          "Վերլուծությունների պահպանում",
+    tech_frontend:        "Vanilla ֆրոնտենդ (այս էջը)",
+    about_what_title:     "Ի՞նչ է TruthLens-ը",
+    about_what_p1:        "TruthLens-ը կեղծ լուրերի հայտնաբերման համակարգ է, որը համատեղում է մեքենայական ուսուցման մոդելներ, իմաստային փաստերի ստուգում և լեզվաբանական վերլուծություն՝ գնահատելու լրատվական պնդումների ու հոդվածների վստահելիությունը։",
+    about_what_p2:        "Ստեղծված է որպես բակալավրիատի ավարտական թեզ, օգտագործում է RoBERTa-ի ֆայն-թյուն արված մոդելների անսամբլ՝ Wikipedia-ի և NewsAPI-ի հետ մեկտեղ, բազմաղբյուր ապացույցների որոնման համար։",
+    about_how_title:      "Ինչպես է աշխատում",
+    step1_title: "Տեքստի բաժանում",
+    step1_desc:  "Երկար հոդվածները բաժանվում են 300 բառի համընկնող հատվածների՝ մոդելի 512-թոկեն սահմանաչափը չգերազանցելու համար։",
+    step2_title: "ML Ensemble գնահատում",
+    step2_desc:  "Երեք ֆայն-թյուն արված տրանսֆորմեր մոդելներ գնահատում են յուրաքանչյուր հատված։ Գնահատականները կշռվում են 50/35/15 հարաբերությամբ՝ fake_probability-ի մեջ:",
+    step3_title: "Տեքստի հատկանիշների վերլուծություն",
+    step3_desc:  "Հայտնաբերվում են 8 մակերեսային ազդանշաններ. ԲՈԼՈՐ ՄԱՅՐԱՏԱՌ, ավելցուկ կետադրություն, clickbait արտահայտություններ, հիպերբոլիկ լեզու, անորոշ վերագրում և այլն:",
+    step4_title: "Բազմաաղբյուր փաստերի ստուգում",
+    step4_desc:  "Wikipedia-ն և NewsAPI-ն հարցումներ են ստանում զուգահեռ կերպով։ Sentence Transformers-ը հաշվում է պնդման ու ապացույցի իմաստային նմանությունը:",
+    step5_title: "Աղբյուրի վստահելիություն",
+    step5_desc:  "Հոդվածի դոմենը ստուգվում է 80+ ստուգված աղբյուրների բազայով, WHOIS-ով անհայտ դոմենների համար:",
+    step6_title: "Հիբրիդ վճիռ",
+    step6_desc:  "Երկուղի որոշման շարժիչը համատեղում է բոլոր ազդանշանները՝ վերջնական վճիռ կայացնելու համար. Ճիշտ, Հավ. ճիշտ, Անորոշ, Հավ. կեղծ կամ Կեղծ:",
+    about_verdict_title:  "Վճիռների սանդղակ",
+    verdict_true_desc:        "Ամուր փաստային հիմք + ցածր կեղծ հավանականություն",
+    verdict_likely_true_desc: "Ճշմարտության չափավոր ապացույց",
+    verdict_uncertain_desc:   "Հակասական կամ անբավարար ազդանշաններ",
+    verdict_likely_fake_desc: "Բարձր կեղծ հավ. + մանիպուլյացիայի ազդանշաններ",
+    verdict_fake_desc:        "Բարձր կեղծ հավ. + թույլ/հակասող ապացույց",
+    limit_1: "• Մոդելները հասանելի են միայն անգլերենի համար",
+    limit_2: "• Կարճ պնդումները կարող են ստանալ պահպանողական գնահատական",
+    limit_3: "• Երգիծանքի հուսալի հայտնաբերումը դժվար է",
+    limit_4: "• Շատ վերջին իրադարձությունները կարող են բացակայել Wikipedia-ից",
+
+    loading:      "Վերլուծվում է…",
+    err_no_text:  "Խնդրում ենք նախ մուտքագրել տեքստ։",
+    err_api:      "Հնարավոր չէ կապ հաստատել API-ի հետ։ Արդյո՞ք սերվերը աշխատում է։",
+    err_url:      "Հնարավոր չեղավ վերլուծել URL-ը։",
+  }
+};
+
+let currentLang = 'en';
+
+function t(key) {
+  return (i18n[currentLang] && i18n[currentLang][key]) || (i18n['en'][key]) || key;
+}
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = t(key);
+    if (val) el.textContent = val;
+  });
+
+  const ta = document.getElementById('claim-input');
+  if (ta) ta.placeholder = t('input_placeholder');
+
+  const hint = document.getElementById('url-hint');
+  if (hint && !hint.classList.contains('error')) hint.textContent = t('url_hint');
+
+  document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
+  document.getElementById('lang-hy').classList.toggle('active', currentLang === 'hy');
+
+  document.documentElement.lang = currentLang === 'hy' ? 'hy' : 'en';
+
+  renderExamplePills();
+  renderFilterRow();
+  renderAboutPage();
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('tl_lang', lang);
+  applyLang();
+}
+
 function navigate(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -820,19 +1053,89 @@ function navigate(page) {
   if (page === 'analytics') loadAnalytics();
 }
 
-/* ── Toast ────────────────────────────────────────────────────── */
-function showToast(msg, isError=false) {
-  const t = document.getElementById('toast');
-  t.innerHTML = (isError ? '⚠️ ' : '✓ ') + msg;
-  t.style.background = isError ? '#991B1B' : '#1A1714';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+function showToast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.innerHTML = (isError ? '⚠️ ' : '✓ ') + msg;
+  el.style.background = isError ? '#991B1B' : '#1A1714';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-/* ── Analyzer ─────────────────────────────────────────────────── */
+function renderExamplePills() {
+  const container = document.getElementById('example-pills');
+  if (!container) return;
+  const examples = ['example_1', 'example_2', 'example_3', 'example_4', 'example_5'];
+  container.innerHTML = examples.map(key =>
+    `<div class="pill" onclick="setExample(this)">${escHtml(t(key))}</div>`
+  ).join('');
+}
+
+function renderFilterRow() {
+  const row = document.getElementById('filter-row');
+  if (!row) return;
+  const filters = [
+    { label: t('filter_all'),         value: null },
+    { label: t('filter_true'),        value: 'True' },
+    { label: t('filter_likely_true'), value: 'Likely True' },
+    { label: t('filter_uncertain'),   value: 'Uncertain' },
+    { label: t('filter_likely_fake'), value: 'Likely Fake' },
+    { label: t('filter_fake'),        value: 'Fake' },
+  ];
+  row.innerHTML = filters.map((f, i) =>
+    `<button class="filter-btn${i === 0 ? ' active' : ''}" onclick="filterHistory(${f.value === null ? 'null' : `'${f.value}'`}, this)">${escHtml(f.label)}</button>`
+  ).join('');
+  historyFilter = null; 
+}
+
+function renderAboutPage() {
+  const prose = document.getElementById('about-main-prose');
+  if (!prose) return;
+
+  const steps = [1,2,3,4,5,6].map(n => `
+    <div class="step">
+      <div class="step-num">${n}</div>
+      <div class="step-content">
+        <h3>${escHtml(t('step'+n+'_title'))}</h3>
+        <p>${escHtml(t('step'+n+'_desc'))}</p>
+      </div>
+    </div>
+  `).join('');
+
+  const verdicts = [
+    { cls: 'true',        key: 'verdict_true_desc',        label: 'True' },
+    { cls: 'likely-true', key: 'verdict_likely_true_desc', label: 'Likely True' },
+    { cls: 'uncertain',   key: 'verdict_uncertain_desc',   label: 'Uncertain' },
+    { cls: 'likely-fake', key: 'verdict_likely_fake_desc', label: 'Likely Fake' },
+    { cls: 'fake',        key: 'verdict_fake_desc',        label: 'Fake' },
+  ];
+  const verdictGuide = verdicts.map(v => `
+    <div class="vg-row">
+      <span class="vg-label verdict-badge ${v.cls}" style="padding:3px 10px;font-size:.78rem">${v.label}</span>
+      <span class="vg-desc">${escHtml(t(v.key))}</span>
+    </div>
+  `).join('');
+
+  prose.innerHTML = `
+    <h2>${escHtml(t('about_what_title'))}</h2>
+    <p>${escHtml(t('about_what_p1'))}</p>
+    <p>${escHtml(t('about_what_p2'))}</p>
+    <h2>${escHtml(t('about_how_title'))}</h2>
+    <div class="pipeline-steps">${steps}</div>
+    <h2>${escHtml(t('about_verdict_title'))}</h2>
+    <div class="verdict-guide">${verdictGuide}</div>
+  `;
+
+  const limits = document.getElementById('about-limitations');
+  if (limits) {
+    limits.innerHTML = [1,2,3,4].map(n =>
+      `<p>${escHtml(t('limit_'+n))}</p>`
+    ).join('');
+  }
+}
+
 function updateCharCount() {
   const v = document.getElementById('claim-input').value;
-  document.getElementById('char-count').textContent = v.length + ' chars';
+  document.getElementById('char-count').innerHTML = v.length + ' <span data-i18n="chars">' + t('chars') + '</span>';
 }
 
 function setExample(el) {
@@ -843,25 +1146,23 @@ function setExample(el) {
 
 function verdictClass(v) {
   if (!v) return 'uncertain';
-  const vl = v.toLowerCase().replace(/ /g,'-');
+  const vl = v.toLowerCase().replace(/ /g, '-');
   return ['true','likely-true','uncertain','likely-fake','fake'].includes(vl) ? vl : 'uncertain';
 }
-
 function verdictEmoji(v) {
-  const map = { 'True':'✅', 'Likely True':'🟢', 'Uncertain':'🟡', 'Likely Fake':'🟠', 'Fake':'🔴' };
+  const map = { 'True':'✅','Likely True':'🟢','Uncertain':'🟡','Likely Fake':'🟠','Fake':'🔴' };
   return map[v] || '⚪';
 }
 
 async function analyzeText() {
   const text = document.getElementById('claim-input').value.trim();
-  if (!text) { showToast('Please enter some text first.', true); return; }
+  if (!text) { showToast(t('err_no_text'), true); return; }
 
   const btn = document.getElementById('analyze-btn');
   btn.classList.add('loading'); btn.disabled = true;
   document.getElementById('result-empty').style.display = 'none';
-  document.getElementById('result-content').style.display = 'none';
   document.getElementById('result-content').innerHTML =
-    '<div class="loading-overlay"><div class="big-spinner"></div><span>Analyzing…</span></div>';
+    `<div class="loading-overlay"><div class="big-spinner"></div><span>${t('loading')}</span></div>`;
   document.getElementById('result-content').style.display = 'block';
   document.getElementById('suggestion-box').style.display = 'none';
 
@@ -876,7 +1177,7 @@ async function analyzeText() {
     renderResult(d);
     fetchAndRenderSuggestion(d.verdict);
   } catch (e) {
-    showToast('Could not connect to API. Is the server running?', true);
+    showToast(t('err_api'), true);
     document.getElementById('result-content').style.display = 'none';
     document.getElementById('result-empty').style.display = 'flex';
   } finally {
@@ -887,45 +1188,40 @@ async function analyzeText() {
 function renderResult(d) {
   const vc = verdictClass(d.verdict);
   const signals = d.signals || [];
-  const dangerSignals   = [
-    'HIGH_FAKE_PROBABILITY', 'ELEVATED_FAKE_PROBABILITY',
-    'FACT_CONTRADICTION', 'MANIPULATIVE_LANGUAGE',
-    'CLICKBAIT_LANGUAGE', 'HYPERBOLIC_LANGUAGE',
-    'VAGUE_ATTRIBUTION', 'EXCESSIVE_PUNCTUATION',
-    'NO_EVIDENCE_FOUND', 'LOW_CREDIBILITY',
+  const dangerSignals = [
+    'HIGH_FAKE_PROBABILITY','ELEVATED_FAKE_PROBABILITY','FACT_CONTRADICTION',
+    'MANIPULATIVE_LANGUAGE','CLICKBAIT_LANGUAGE','HYPERBOLIC_LANGUAGE',
+    'VAGUE_ATTRIBUTION','EXCESSIVE_PUNCTUATION','NO_EVIDENCE_FOUND','LOW_CREDIBILITY',
   ];
-  const positiveSignals = [
-    'FACT_SUPPORTED', 'HIGH_CREDIBILITY',
-  ];
+  const positiveSignals = ['FACT_SUPPORTED','HIGH_CREDIBILITY'];
 
   const signalsHTML = signals.length
     ? signals.map(s => {
-        const cls = dangerSignals.includes(s)
-          ? 'signal-tag danger'
-          : positiveSignals.includes(s)
-            ? 'signal-tag positive'
-            : 'signal-tag';
+        const cls = dangerSignals.includes(s) ? 'signal-tag danger'
+          : positiveSignals.includes(s) ? 'signal-tag positive' : 'signal-tag';
         return `<span class="${cls}">${s}</span>`;
       }).join('')
-    : '<span style="color:var(--text-3);font-size:.85rem">No signals detected</span>';
+    : `<span style="color:var(--text-3);font-size:.85rem">${t('no_signals')}</span>`;
+
+  const translationNote = d.translation?.was_translated
+    ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:9px 13px;margin-bottom:12px;font-size:.82rem;color:#166534;display:flex;align-items:flex-start;gap:8px;">
+        <span style="flex-shrink:0">🇦🇲</span><span>${t('translation_note')}</span></div>`
+    : d.translation?.translation_error
+      ? `<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:9px 13px;margin-bottom:12px;font-size:.82rem;color:#92400E;display:flex;align-items:flex-start;gap:8px;">
+          <span style="flex-shrink:0">⚠️</span><span>${t('translation_fail')}</span></div>`
+      : '';
 
   const negationNote = d.fact_check?.negation_inverted
-    ? `<div style="
-        background:#EEF3FB;border:1px solid #BFDBFE;border-radius:8px;
-        padding:9px 13px;margin-bottom:10px;
-        font-size:.82rem;color:#1A4D8F;display:flex;align-items:flex-start;gap:8px;">
-        <span style="flex-shrink:0">🔄</span>
-        <span>This claim contains negation. The system searched for the affirmative version
-        and <strong>inverted the result</strong> — the verdict reflects the original negated claim.</span>
-      </div>`
+    ? `<div style="background:#EEF3FB;border:1px solid #BFDBFE;border-radius:8px;padding:9px 13px;margin-bottom:10px;font-size:.82rem;color:#1A4D8F;display:flex;align-items:flex-start;gap:8px;">
+        <span style="flex-shrink:0">🔄</span><span>${t('negation_note')}</span></div>`
     : '';
 
   const evidenceHTML = d.fact_check?.evidence?.[0]
     ? `<div class="evidence-box">
-         ${escHtml(d.fact_check.evidence[0])}
-         <div class="evidence-source">Sources: ${(d.fact_check.sources||[]).join(', ') || 'N/A'} &nbsp;·&nbsp; Support: ${(d.fact_check.support_score*100).toFixed(0)}%</div>
+        ${escHtml(d.fact_check.evidence[0])}
+        <div class="evidence-source">${t('label_sources')}: ${(d.fact_check.sources||[]).join(', ')||'N/A'} &nbsp;·&nbsp; ${t('label_support')}: ${(d.fact_check.support_score*100).toFixed(0)}%</div>
        </div>`
-    : '<span style="color:var(--text-3);font-size:.85rem">No evidence found</span>';
+    : `<span style="color:var(--text-3);font-size:.85rem">${t('no_evidence')}</span>`;
 
   const warningHTML = d.article_warning
     ? `<div class="article-warning"><span class="article-warning-icon">⚠️</span><span>${escHtml(d.article_warning)}</span></div>`
@@ -933,11 +1229,11 @@ function renderResult(d) {
 
   const sourceHTML = renderSourceAnalysis(d.source_analysis);
 
-  document.getElementById('result-content').innerHTML = warningHTML + sourceHTML + `
+  document.getElementById('result-content').innerHTML = warningHTML + translationNote + sourceHTML + `
     <div class="verdict-section">
       <div class="verdict-badge ${vc}">${verdictEmoji(d.verdict)} ${d.verdict}</div>
       <div class="confidence-bar-wrap">
-        <div class="confidence-label">Fake probability</div>
+        <div class="confidence-label">${t('label_fake_prob')}</div>
         <div class="confidence-bar">
           <div class="confidence-fill" style="width:${(d.analysis?.fake_probability||0)*100}%"></div>
         </div>
@@ -946,51 +1242,49 @@ function renderResult(d) {
     <div class="scores-grid">
       <div class="score-cell">
         <div class="score-value">${d.credibility_score}</div>
-        <div class="score-label">Credibility</div>
+        <div class="score-label">${t('label_credibility')}</div>
       </div>
       <div class="score-cell">
         <div class="score-value">${d.confidence}%</div>
-        <div class="score-label">Confidence</div>
+        <div class="score-label">${t('label_confidence')}</div>
       </div>
       <div class="score-cell">
         <div class="score-value"><span class="risk-badge ${d.risk_level}">${d.risk_level}</span></div>
-        <div class="score-label">Risk</div>
+        <div class="score-label">${t('label_risk')}</div>
       </div>
     </div>
     <div class="result-section">
-      <div class="section-title">Explanation</div>
-      <div class="explanation-primary">${escHtml(d.explanation?.primary_reason || '')}</div>
+      <div class="section-title">${t('section_explanation')}</div>
+      <div class="explanation-primary">${escHtml(d.explanation?.primary_reason||'')}</div>
       ${(d.explanation?.supporting_reasons||[]).map(r=>`<div class="explanation-supporting">• ${escHtml(r)}</div>`).join('')}
     </div>
     <div class="result-section">
-      <div class="section-title">Signals</div>
+      <div class="section-title">${t('section_signals')}</div>
       <div class="signals-list">${signalsHTML}</div>
     </div>
     <div class="result-section">
-      <div class="section-title">Best Evidence Found</div>
-      ${negationNote}
-      ${evidenceHTML}
+      <div class="section-title">${t('section_evidence')}</div>
+      ${negationNote}${evidenceHTML}
     </div>
     <div class="result-section">
-      <div class="section-title">Sentiment</div>
+      <div class="section-title">${t('section_sentiment')}</div>
       <div class="sentiment-row">
         <span class="sentiment-pill ${d.analysis?.sentiment}">${d.analysis?.sentiment}</span>
-        <span style="font-size:.82rem;color:var(--text-3)">${d.llm_analysis?.tone === 'emotional' ? '⚠️ Emotional tone detected' : 'Neutral tone'}</span>
+        <span style="font-size:.82rem;color:var(--text-3)">${d.llm_analysis?.tone==='emotional' ? t('emotional_tone') : t('neutral_tone')}</span>
       </div>
     </div>
     ${d.llm_analysis?.detected_patterns?.length ? `
     <div class="result-section">
-      <div class="section-title">Detected Patterns</div>
+      <div class="section-title">${t('section_patterns')}</div>
       <div class="signals-list">${d.llm_analysis.detected_patterns.map(p=>`<span class="signal-tag danger">${escHtml(p)}</span>`).join('')}</div>
     </div>` : ''}
   `;
 }
 
 function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-/* ── History ──────────────────────────────────────────────────── */
 let historyFilter = null;
 let historyPage   = 0;
 const HISTORY_LIMIT = 10;
@@ -1004,26 +1298,25 @@ function filterHistory(verdict, btn) {
 
 async function loadHistory() {
   const list = document.getElementById('history-list');
-  list.innerHTML = '<div class="loading-overlay"><div class="big-spinner"></div><span>Loading…</span></div>';
+  list.innerHTML = `<div class="loading-overlay"><div class="big-spinner"></div><span>${t('loading_history')}</span></div>`;
   try {
     let url = `${API}/history?skip=${historyPage * HISTORY_LIMIT}&limit=${HISTORY_LIMIT}`;
     if (historyFilter) url += `&verdict=${encodeURIComponent(historyFilter)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error();
     const data = await res.json();
-    // Support both new {total, results} format and legacy plain array
     const items = Array.isArray(data) ? data : (data.results || []);
     const total = Array.isArray(data) ? null : (data.total ?? null);
     renderHistory(items, total);
   } catch {
-    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Could not load history. Is the API running?</p></div>';
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>${t('err_api')}</p></div>`;
   }
 }
 
 function renderHistory(items, total) {
   const list = document.getElementById('history-list');
   if (!items.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No analyses found.</p></div>';
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>${t('no_analyses')}</p></div>`;
     document.getElementById('pagination').innerHTML = '';
     return;
   }
@@ -1041,12 +1334,12 @@ function renderHistory(items, total) {
         </div>
       </div>
       <div class="history-detail">
-        <div class="detail-cell"><div class="detail-label">Credibility</div><div class="detail-value">${item.credibility_score}/100</div></div>
-        <div class="detail-cell"><div class="detail-label">Fake Probability</div><div class="detail-value">${(item.fake_probability*100).toFixed(1)}%</div></div>
-        <div class="detail-cell"><div class="detail-label">Risk Level</div><div class="detail-value"><span class="risk-badge ${item.risk_level}">${item.risk_level}</span></div></div>
-        <div class="detail-cell"><div class="detail-label">Sentiment</div><div class="detail-value"><span class="sentiment-pill ${item.sentiment}" style="font-size:.78rem">${item.sentiment}</span></div></div>
-        <div class="detail-cell"><div class="detail-label">Risk Score</div><div class="detail-value">${item.risk_score}/100</div></div>
-        <div class="detail-cell"><div class="detail-label">Source</div><div class="detail-value" style="font-family:var(--ff-mono);font-size:.78rem">${item.source_domain || '— plain text'}</div></div>
+        <div class="detail-cell"><div class="detail-label">${t('label_credibility')}</div><div class="detail-value">${item.credibility_score}/100</div></div>
+        <div class="detail-cell"><div class="detail-label">${t('label_fake_prob')}</div><div class="detail-value">${(item.fake_probability*100).toFixed(1)}%</div></div>
+        <div class="detail-cell"><div class="detail-label">${t('label_risk')}</div><div class="detail-value"><span class="risk-badge ${item.risk_level}">${item.risk_level}</span></div></div>
+        <div class="detail-cell"><div class="detail-label">${t('label_sentiment')}</div><div class="detail-value"><span class="sentiment-pill ${item.sentiment}" style="font-size:.78rem">${item.sentiment}</span></div></div>
+        <div class="detail-cell"><div class="detail-label">${t('label_risk_score')}</div><div class="detail-value">${item.risk_score}/100</div></div>
+        <div class="detail-cell"><div class="detail-label">${t('label_source')}</div><div class="detail-value" style="font-family:var(--ff-mono);font-size:.78rem">${item.source_domain||'—'}</div></div>
       </div>
     </div>
   `).join('');
@@ -1055,24 +1348,24 @@ function renderHistory(items, total) {
   const totalPages = total !== null ? Math.ceil(total / HISTORY_LIMIT) : null;
   const hasNext = total !== null ? (historyPage + 1) < totalPages : items.length >= HISTORY_LIMIT;
   pg.innerHTML = `
-    <button class="page-btn" onclick="prevPage()" ${historyPage===0?'disabled':''}>← Prev</button>
-    <span class="page-info">Page ${historyPage+1}${totalPages ? ' / ' + totalPages : ''}</span>
-    <button class="page-btn" onclick="nextPage()" ${!hasNext?'disabled':''}>Next →</button>
+    <button class="page-btn" onclick="prevPage()" ${historyPage===0?'disabled':''}> ← ${t('prev_page')}</button>
+    <span class="page-info">${t('page_label')} ${historyPage+1}${totalPages ? ' / '+totalPages : ''}</span>
+    <button class="page-btn" onclick="nextPage()" ${!hasNext?'disabled':''}>${t('next_page')} →</button>
   `;
 }
 
 function toggleHistoryItem(id) {
-  document.getElementById('hi-' + id).classList.toggle('expanded');
+  document.getElementById('hi-'+id).classList.toggle('expanded');
 }
 
 async function deleteHistory(e, id) {
   e.stopPropagation();
-  if (!confirm('Delete this analysis?')) return;
+  if (!confirm(t('delete_confirm'))) return;
   try {
     await fetch(`${API}/history/${id}`, { method: 'DELETE' });
-    showToast('Analysis deleted.');
+    showToast(t('deleted_ok'));
     loadHistory();
-  } catch { showToast('Delete failed.', true); }
+  } catch { showToast(t('deleted_fail'), true); }
 }
 
 function prevPage() { if (historyPage > 0) { historyPage--; loadHistory(); } }
@@ -1085,10 +1378,9 @@ function formatDate(iso) {
     + ' ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
 }
 
-/* ── Analytics ────────────────────────────────────────────────── */
 async function loadAnalytics() {
   document.getElementById('analytics-content').innerHTML =
-    '<div class="loading-overlay"><div class="big-spinner"></div><span>Loading analytics…</span></div>';
+    `<div class="loading-overlay"><div class="big-spinner"></div><span>${t('loading_analytics')}</span></div>`;
   try {
     const res = await fetch(API + '/analytics');
     if (!res.ok) throw new Error();
@@ -1096,7 +1388,7 @@ async function loadAnalytics() {
     renderAnalytics(d);
   } catch {
     document.getElementById('analytics-content').innerHTML =
-      '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Could not load analytics.</p></div>';
+      `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>${t('err_api')}</p></div>`;
   }
   loadTrustedSources();
 }
@@ -1107,21 +1399,21 @@ function renderAnalytics(d) {
   const realRate = total ? ((d.real_count/total)*100).toFixed(1) : 0;
 
   const donutData = [
-    { label:'Fake',  val: d.fake_count||0,  color:'#DC2626' },
-    { label:'Real',  val: d.real_count||0,  color:'#16A34A' },
-    { label:'Other', val: Math.max(0,(d.total_analyses||0)-((d.fake_count||0)+(d.real_count||0))), color:'#D97706' },
+    { label: t('filter_fake'), val: d.fake_count||0, color:'#DC2626' },
+    { label: t('filter_true'), val: d.real_count||0, color:'#16A34A' },
+    { label: t('filter_uncertain'), val: Math.max(0,(d.total_analyses||0)-((d.fake_count||0)+(d.real_count||0))), color:'#D97706' },
   ];
 
   document.getElementById('analytics-content').innerHTML = `
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value">${d.total_analyses||0}</div><div class="stat-label">Total Analyses</div><div class="stat-sub">+${d.analyses_today||0} today</div></div>
-      <div class="stat-card"><div class="stat-icon">🔴</div><div class="stat-value">${d.fake_count||0}</div><div class="stat-label">Fake Detected</div><div class="stat-sub">${fakeRate}% of total</div></div>
-      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value">${d.real_count||0}</div><div class="stat-label">Real Verified</div><div class="stat-sub">${realRate}% of total</div></div>
-      <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value">${d.high_risk||0}</div><div class="stat-label">High Risk</div><div class="stat-sub">${d.medium_risk||0} medium, ${d.low_risk||0} low</div></div>
+      <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value">${d.total_analyses||0}</div><div class="stat-label">${t('stat_total')}</div><div class="stat-sub">+${d.analyses_today||0} ${t('stat_today')}</div></div>
+      <div class="stat-card"><div class="stat-icon">🔴</div><div class="stat-value">${d.fake_count||0}</div><div class="stat-label">${t('stat_fake')}</div><div class="stat-sub">${fakeRate}% ${t('stat_of_total')}</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value">${d.real_count||0}</div><div class="stat-label">${t('stat_real')}</div><div class="stat-sub">${realRate}% ${t('stat_of_total')}</div></div>
+      <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value">${d.high_risk||0}</div><div class="stat-label">${t('stat_high_risk')}</div><div class="stat-sub">${d.medium_risk||0} ${t('stat_medium')}, ${d.low_risk||0} ${t('stat_low')}</div></div>
     </div>
     <div class="analytics-grid">
       <div class="chart-card">
-        <div class="chart-title">Verdict Distribution</div>
+        <div class="chart-title">${t('chart_verdict')}</div>
         <div class="donut-wrap">
           <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">${buildDonut(donutData)}</svg>
           <div class="donut-legend">
@@ -1130,7 +1422,7 @@ function renderAnalytics(d) {
         </div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Risk Distribution</div>
+        <div class="chart-title">${t('chart_risk')}</div>
         <div class="bar-chart">
           ${buildBar('HIGH',   d.high_risk||0,   total, '#DC2626')}
           ${buildBar('MEDIUM', d.medium_risk||0, total, '#D97706')}
@@ -1138,12 +1430,12 @@ function renderAnalytics(d) {
         </div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Average Scores</div>
+        <div class="chart-title">${t('chart_scores')}</div>
         <div class="metric-list">
-          <div class="metric-row"><span class="metric-name">Avg. Credibility Score</span><span class="metric-value">${d.average_credibility||0}/100</span></div>
-          <div class="metric-row"><span class="metric-name">Avg. Fake Probability</span><span class="metric-value">${((d.average_fake_probability||0)*100).toFixed(1)}%</span></div>
-          <div class="metric-row"><span class="metric-name">Avg. Risk Score</span><span class="metric-value">${d.average_risk_score||0}/100</span></div>
-          <div class="metric-row"><span class="metric-name">Analyses Today</span><span class="metric-value">${d.analyses_today||0}</span></div>
+          <div class="metric-row"><span class="metric-name">${t('metric_credibility')}</span><span class="metric-value">${d.average_credibility||0}/100</span></div>
+          <div class="metric-row"><span class="metric-name">${t('metric_fake_prob')}</span><span class="metric-value">${((d.average_fake_probability||0)*100).toFixed(1)}%</span></div>
+          <div class="metric-row"><span class="metric-name">${t('metric_risk_score')}</span><span class="metric-value">${d.average_risk_score||0}/100</span></div>
+          <div class="metric-row"><span class="metric-name">${t('metric_today')}</span><span class="metric-value">${d.analyses_today||0}</span></div>
         </div>
       </div>
     </div>
@@ -1156,60 +1448,55 @@ function buildBar(label, val, total, color) {
 }
 
 function buildDonut(data) {
-  const total = data.reduce((s,d)=>s+d.val,0) || 1;
-  const r = 40, cx = 55, cy = 55, circ = 2 * Math.PI * r;
-  let offset = 0, paths = '';
+  const total = data.reduce((s,d)=>s+d.val,0)||1;
+  const r=40, cx=55, cy=55, circ=2*Math.PI*r;
+  let offset=0, paths='';
   for (const item of data) {
-    const dash = (item.val / total) * circ;
-    paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${item.color}" stroke-width="18" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    const dash = (item.val/total)*circ;
+    paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${item.color}" stroke-width="18" stroke-dasharray="${dash} ${circ-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
     offset += dash;
   }
   return paths;
 }
 
-/* ── Input mode tabs ──────────────────────────────────────────── */
 function switchTab(mode) {
-  document.getElementById('mode-text').style.display = mode === 'text' ? '' : 'none';
-  document.getElementById('mode-url').style.display  = mode === 'url'  ? '' : 'none';
-  document.getElementById('tab-text').classList.toggle('active', mode === 'text');
-  document.getElementById('tab-url').classList.toggle('active',  mode === 'url');
+  document.getElementById('mode-text').style.display = mode==='text'?'':'none';
+  document.getElementById('mode-url').style.display  = mode==='url'?'':'none';
+  document.getElementById('tab-text').classList.toggle('active', mode==='text');
+  document.getElementById('tab-url').classList.toggle('active',  mode==='url');
 }
 
-/* ── URL analyzer ─────────────────────────────────────────────── */
 function updateUrlState() {
   const val = document.getElementById('url-input').value.trim();
   const btn = document.getElementById('analyze-url-btn');
   const hint = document.getElementById('url-hint');
   const isValid = val.startsWith('http://') || val.startsWith('https://');
   btn.disabled = !isValid;
-  document.getElementById('url-input').classList.toggle('invalid', val.length > 0 && !isValid);
-  hint.textContent = val.length > 0 && !isValid
-    ? 'URL must start with http:// or https://'
-    : 'Paste any news article URL — the text will be extracted and analyzed automatically.';
+  document.getElementById('url-input').classList.toggle('invalid', val.length>0 && !isValid);
+  hint.textContent = (val.length>0 && !isValid) ? t('url_hint_invalid') : t('url_hint');
 }
 
 async function analyzeURL() {
   const url = document.getElementById('url-input').value.trim();
   if (!url) return;
-
   const btn = document.getElementById('analyze-url-btn');
   btn.classList.add('loading'); btn.disabled = true;
   document.getElementById('url-meta').style.display = 'none';
   document.getElementById('result-empty').style.display = 'none';
   document.getElementById('result-content').innerHTML =
-    '<div class="loading-overlay"><div class="big-spinner"></div><span>Fetching article…</span></div>';
+    `<div class="loading-overlay"><div class="big-spinner"></div><span>${t('loading')}</span></div>`;
   document.getElementById('result-content').style.display = 'block';
   document.getElementById('suggestion-box').style.display = 'none';
 
   try {
-    const res = await fetch(API + '/analyze-url', {
+    const res = await fetch(API+'/analyze-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'API error ' + res.status);
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.detail || 'API error '+res.status);
     }
     const d = await res.json();
     if (d.mode === 'source_only') {
@@ -1217,13 +1504,12 @@ async function analyzeURL() {
       return;
     }
     const meta = document.getElementById('url-meta');
-    meta.innerHTML = '<strong>Article extracted successfully</strong>' +
-      ' — <a href="' + escHtml(url) + '" target="_blank" style="color:var(--accent)">View source</a>';
+    meta.innerHTML = `<strong>${t('article_extracted')}</strong> — <a href="${escHtml(url)}" target="_blank" style="color:var(--accent)">${t('view_source')}</a>`;
     meta.style.display = 'block';
     renderResult(d);
     fetchAndRenderSuggestion(d.verdict);
   } catch (e) {
-    showToast(e.message || 'Could not analyze URL.', true);
+    showToast(e.message || t('err_url'), true);
     document.getElementById('result-content').style.display = 'none';
     document.getElementById('result-empty').style.display = 'flex';
   } finally {
@@ -1232,25 +1518,23 @@ async function analyzeURL() {
   }
 }
 
-/* ── Source analysis panel ────────────────────────────────────── */
 function renderSourceAnalysis(sa) {
   if (!sa || !sa.domain) return '';
-  const credColor = sa.credibility >= 70 ? '#16A34A' : sa.credibility >= 40 ? '#D97706' : '#DC2626';
+  const credColor = sa.credibility>=70?'#16A34A':sa.credibility>=40?'#D97706':'#DC2626';
   const biasMap = { 'left':'◀◀ Left','center-left':'◀ Center-left','center':'● Center','center-right':'▶ Center-right','right':'▶▶ Right','unknown':'— Unknown' };
-  const ageText = sa.domain_age_days > 0 ? (sa.domain_age_days >= 365 ? Math.floor(sa.domain_age_days/365)+' year(s)' : sa.domain_age_days+' days') : '—';
-  const warningHTML = sa.warning ? `<div class="source-warning"><span style="font-size:13px;flex-shrink:0">⚠</span><span>${escHtml(sa.warning)}</span></div>` : '';
+  const ageText = sa.domain_age_days>0 ? (sa.domain_age_days>=365?Math.floor(sa.domain_age_days/365)+' year(s)':sa.domain_age_days+' days') : '—';
+  const warningHTML = sa.warning?`<div class="source-warning"><span style="font-size:13px;flex-shrink:0">⚠</span><span>${escHtml(sa.warning)}</span></div>`:'';
   const verifiedHTML = sa.known_source
-    ? `<div class="source-verified"><span class="source-verified-dot"></span>Verified — in credibility database</div>`
-    : `<div class="source-verified">○ Unknown source — estimated from domain analysis</div>`;
-  const sourcesHTML = (sa.rating_sources && sa.rating_sources.length > 0)
-    ? `<div class="source-row" style="margin-top:6px"><span class="source-key">Based on</span><span class="source-notes">${sa.rating_sources.map(s=>escHtml(s)).join(' &nbsp;·&nbsp; ')}</span></div>`
-    : '';
-  const ageRow = sa.domain_age_days > 0
+    ? `<div class="source-verified"><span class="source-verified-dot"></span>${t('verified_source')}</div>`
+    : `<div class="source-verified">○ ${t('unknown_source')}</div>`;
+  const sourcesHTML = (sa.rating_sources&&sa.rating_sources.length>0)
+    ? `<div class="source-row" style="margin-top:6px"><span class="source-key">Based on</span><span class="source-notes">${sa.rating_sources.map(s=>escHtml(s)).join(' &nbsp;·&nbsp; ')}</span></div>` : '';
+  const ageRow = sa.domain_age_days>0
     ? `<div class="source-row"><span class="source-key">Domain age</span><span class="source-val">${ageText}</span></div>` : '';
 
   return `
     <div class="result-section">
-      <div class="section-title">Source Analysis</div>
+      <div class="section-title">${t('section_source')}</div>
       <div class="source-panel">
         <div class="source-header">
           <span class="source-domain">${escHtml(sa.domain)}</span>
@@ -1258,34 +1542,31 @@ function renderSourceAnalysis(sa) {
         </div>
         <div class="source-body">
           <div class="source-row">
-            <span class="source-key">Credibility</span>
+            <span class="source-key">${t('label_credibility')}</span>
             <div class="source-cred-bar"><div class="source-cred-fill" style="width:${sa.credibility}%;background:${credColor}"></div></div>
             <span class="source-val" style="color:${credColor};min-width:40px">${sa.credibility}/100</span>
           </div>
           <div class="source-row"><span class="source-key">Bias</span><span class="source-val">${escHtml(biasMap[sa.bias]||'— Unknown')}</span></div>
           ${ageRow}
           <div class="source-row"><span class="source-key">Notes</span><span class="source-notes">${escHtml(sa.notes)}</span></div>
-          ${verifiedHTML}
-          ${sourcesHTML}
-          ${warningHTML}
+          ${verifiedHTML}${sourcesHTML}${warningHTML}
         </div>
       </div>
     </div>`;
 }
 
-/* ── Source-only result renderer ──────────────────────────────── */
 function renderSourceOnly(sa) {
-  const credColor = sa.credibility >= 70 ? '#16A34A' : sa.credibility >= 40 ? '#D97706' : '#DC2626';
-  const categoryIcon = { 'mainstream':'📰','tabloid':'🗞️','satire':'🎭','conspiracy':'⚠️','state-media':'🏛️','unknown':'🔍' }[sa.category] || '🔍';
+  const credColor = sa.credibility>=70?'#16A34A':sa.credibility>=40?'#D97706':'#DC2626';
+  const categoryIcon = { 'mainstream':'📰','tabloid':'🗞️','satire':'🎭','conspiracy':'⚠️','state-media':'🏛️','unknown':'🔍' }[sa.category]||'🔍';
   const biasMap = { 'left':'◀◀ Left','center-left':'◀ Center-left','center':'● Center','center-right':'▶ Center-right','right':'▶▶ Right','unknown':'— Unknown' };
-  const ageText = sa.domain_age_days > 0 ? (sa.domain_age_days >= 365 ? Math.floor(sa.domain_age_days/365)+' year(s)' : sa.domain_age_days+' days') : 'Unknown';
-  const warningHTML = sa.warning ? `<div class="source-warning" style="margin-top:16px"><span style="font-size:14px;flex-shrink:0">⚠</span><span>${escHtml(sa.warning)}</span></div>` : '';
+  const ageText = sa.domain_age_days>0?(sa.domain_age_days>=365?Math.floor(sa.domain_age_days/365)+' year(s)':sa.domain_age_days+' days'):'Unknown';
+  const warningHTML = sa.warning?`<div class="source-warning" style="margin-top:16px"><span style="font-size:14px;flex-shrink:0">⚠</span><span>${escHtml(sa.warning)}</span></div>`:'';
   const verifiedHTML = sa.known_source
-    ? `<div class="source-verified" style="margin-top:12px"><span class="source-verified-dot"></span>Verified — in credibility database</div>`
-    : `<div class="source-verified" style="margin-top:12px">○ Unknown source — credibility estimated from domain analysis</div>`;
-  const sourcesRowHTML = (sa.rating_sources && sa.rating_sources.length > 0)
+    ? `<div class="source-verified" style="margin-top:12px"><span class="source-verified-dot"></span>${t('verified_source')}</div>`
+    : `<div class="source-verified" style="margin-top:12px">○ ${t('unknown_source')}</div>`;
+  const sourcesRowHTML = (sa.rating_sources&&sa.rating_sources.length>0)
     ? `<div class="source-row" style="margin-top:6px"><span class="source-key">Based on</span><span class="source-notes">${sa.rating_sources.map(s=>escHtml(s)).join(' &nbsp;·&nbsp; ')}</span></div>` : '';
-  const ageRow = sa.domain_age_days > 0 ? `<div class="source-row"><span class="source-key">Domain age</span><span class="source-val">${ageText}</span></div>` : '';
+  const ageRow = sa.domain_age_days>0?`<div class="source-row"><span class="source-key">Domain age</span><span class="source-val">${ageText}</span></div>`:'';
 
   document.getElementById('result-empty').style.display = 'none';
   document.getElementById('result-content').style.display = 'block';
@@ -1295,7 +1576,7 @@ function renderSourceOnly(sa) {
         <div class="source-only-icon">${categoryIcon}</div>
         <div>
           <div class="source-only-title">${escHtml(sa.domain)}</div>
-          <div class="source-only-sub">Source credibility analysis — no article detected</div>
+          <div class="source-only-sub">${t('source_only_sub')}</div>
         </div>
       </div>
       <div class="source-panel">
@@ -1305,7 +1586,7 @@ function renderSourceOnly(sa) {
         </div>
         <div class="source-body">
           <div class="source-row">
-            <span class="source-key">Credibility</span>
+            <span class="source-key">${t('label_credibility')}</span>
             <div class="source-cred-bar"><div class="source-cred-fill" style="width:${sa.credibility}%;background:${credColor}"></div></div>
             <span class="source-val" style="color:${credColor};min-width:40px">${sa.credibility}/100</span>
           </div>
@@ -1313,119 +1594,74 @@ function renderSourceOnly(sa) {
           <div class="source-row"><span class="source-key">Bias</span><span class="source-val">${escHtml(biasMap[sa.bias]||'— Unknown')}</span></div>
           ${ageRow}
           <div class="source-row"><span class="source-key">Notes</span><span class="source-notes">${escHtml(sa.notes)}</span></div>
-          ${verifiedHTML}
-          ${sourcesRowHTML}
-          ${warningHTML}
+          ${verifiedHTML}${sourcesRowHTML}${warningHTML}
         </div>
       </div>
-      <p style="margin-top:16px;font-size:.83rem;color:var(--text-3);line-height:1.6">
-        💡 This URL appears to be a news source homepage rather than a specific article.
-        To analyze article content, paste the URL of a specific news story.
-      </p>
+      <p style="margin-top:16px;font-size:.83rem;color:var(--text-3);line-height:1.6">${t('homepage_tip')}</p>
     </div>`;
 }
 
-/* ── Contextual suggestion ────────────────────────────────────── */
 async function fetchAndRenderSuggestion(verdict) {
   const box = document.getElementById('suggestion-box');
   if (!box) return;
-  box.style.display = 'none';
-  box.innerHTML = '';
-
+  box.style.display = 'none'; box.innerHTML = '';
   try {
     const res = await fetch(`${API}/trusted-sources/suggest?verdict=${encodeURIComponent(verdict)}&limit=3`);
     if (!res.ok) return;
     const d = await res.json();
     if (!d.suggest || !d.sources.length) return;
-
     box.innerHTML = `
-      <div style="
-        background:#FFF9EC;
-        border:1px solid #FCD34D;
-        border-left:3px solid #F59E0B;
-        border-radius:12px;
-        padding:16px 18px;
-        margin-top:12px;
-      ">
-        <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#92400E;margin-bottom:8px;">
-          💡 Verify with trusted sources
-        </div>
+      <div style="background:#FFF9EC;border:1px solid #FCD34D;border-left:3px solid #F59E0B;border-radius:12px;padding:16px 18px;margin-top:12px;">
+        <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#92400E;margin-bottom:8px;">${t('verify_msg_title')}</div>
         <div style="font-size:.83rem;color:#78350F;margin-bottom:12px;">${escHtml(d.message)}</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          ${d.sources.map(s => `
-            <a href="${escHtml(s.url)}" target="_blank" style="
-              display:inline-flex;align-items:center;gap:7px;
-              background:#fff;border:1px solid #FCD34D;border-radius:8px;
-              padding:7px 12px;font-size:.83rem;font-weight:500;color:#92400E;
-              text-decoration:none;
-            "
-            onmouseover="this.style.background='#FFFBEB'"
-            onmouseout="this.style.background='#fff'"
-            >
-              ${escHtml(s.icon)} ${escHtml(s.domain)}
-              <span style="font-size:.72rem;color:#B45309;font-family:var(--ff-mono)">${s.credibility}/100</span>
-            </a>
-          `).join('')}
+          ${d.sources.map(s=>`
+            <a href="${escHtml(s.url)}" target="_blank" style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #FCD34D;border-radius:8px;padding:7px 12px;font-size:.83rem;font-weight:500;color:#92400E;text-decoration:none;"
+               onmouseover="this.style.background='#FFFBEB'" onmouseout="this.style.background='#fff'">
+              ${escHtml(s.icon)} ${escHtml(s.domain)}<span style="font-size:.72rem;color:#B45309;font-family:var(--ff-mono)">${s.credibility}/100</span>
+            </a>`).join('')}
         </div>
       </div>`;
     box.style.display = 'block';
-  } catch (e) {
-    // silently fail
-  }
+  } catch {  }
 }
 
-/* ── Trusted Sources panel (Analytics page) ───────────────────── */
 async function loadTrustedSources() {
   const container = document.getElementById('trusted-sources-content');
   if (!container) return;
-  container.innerHTML = '<div class="loading-overlay"><div class="big-spinner"></div><span>Loading trusted sources…</span></div>';
-
+  container.innerHTML = `<div class="loading-overlay"><div class="big-spinner"></div><span>${t('trusted_loading')}</span></div>`;
   try {
     const res = await fetch(`${API}/trusted-sources?min_credibility=70`);
     if (!res.ok) throw new Error();
     const d = await res.json();
     renderTrustedSources(d);
-  } catch {
-    container.innerHTML = '';
-  }
+  } catch { container.innerHTML = ''; }
 }
 
 function renderTrustedSources(d) {
   const container = document.getElementById('trusted-sources-content');
-  if (!d.total) {
-    container.innerHTML = '';
-    return;
-  }
-
-  const groupOrder = ['News', 'Fact-Checking', 'Science', 'Other'];
-  const groupColors = { 'News':'#1A4D8F', 'Fact-Checking':'#166534', 'Science':'#5B21B6', 'Other':'#6B6560' };
-
+  if (!d.total) { container.innerHTML=''; return; }
+  const groupOrder = ['News','Fact-Checking','Science','Other'];
+  const groupColors = { 'News':'#1A4D8F','Fact-Checking':'#166534','Science':'#5B21B6','Other':'#6B6560' };
   const groupsHTML = groupOrder
-    .filter(g => d.groups[g] && d.groups[g].length > 0)
+    .filter(g => d.groups[g]&&d.groups[g].length>0)
     .map(g => {
-      const color = groupColors[g] || '#6B6560';
+      const color = groupColors[g]||'#6B6560';
       return `
         <div style="margin-bottom:24px;">
           <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:${color};margin-bottom:10px;">${g}</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
-            ${d.groups[g].map(s => `
-              <a href="${escHtml(s.url)}" target="_blank" style="
-                display:flex;align-items:center;gap:12px;
-                background:var(--surface);border:1px solid var(--border);
-                border-radius:10px;padding:12px 14px;text-decoration:none;
-                transition:box-shadow .15s,border-color .15s;
-              "
-              onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)';this.style.borderColor='${color}'"
-              onmouseout="this.style.boxShadow='none';this.style.borderColor='var(--border)'"
-              >
+            ${d.groups[g].map(s=>`
+              <a href="${escHtml(s.url)}" target="_blank" style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-decoration:none;transition:box-shadow .15s,border-color .15s;"
+                 onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)';this.style.borderColor='${color}'"
+                 onmouseout="this.style.boxShadow='none';this.style.borderColor='var(--border)'">
                 <div style="width:38px;height:38px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${escHtml(s.icon)}</div>
                 <div style="flex:1;min-width:0;">
                   <div style="font-size:.88rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(s.domain)}</div>
                   <div style="font-size:.75rem;color:var(--text-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(s.notes)}</div>
                 </div>
                 <div style="font-size:.78rem;font-weight:700;color:${s.credibility>=90?'#166534':s.credibility>=70?'#1A4D8F':'#92400E'};font-family:var(--ff-mono);flex-shrink:0;">${s.credibility}</div>
-              </a>
-            `).join('')}
+              </a>`).join('')}
           </div>
         </div>`;
     }).join('');
@@ -1434,19 +1670,21 @@ function renderTrustedSources(d) {
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <div>
-          <div style="font-family:var(--ff-display);font-size:1.1rem;font-weight:700;color:var(--text);">Trusted Sources</div>
-          <div style="font-size:.82rem;color:var(--text-3);margin-top:3px;">${d.total} sources with credibility ≥ 70</div>
+          <div style="font-family:var(--ff-display);font-size:1.1rem;font-weight:700;color:var(--text);">${t('trusted_title')}</div>
+          <div style="font-size:.82rem;color:var(--text-3);margin-top:3px;">${d.total} ${t('trusted_sub')}</div>
         </div>
-        <div style="background:var(--accent-bg);color:var(--accent);font-size:.78rem;font-weight:600;padding:4px 12px;border-radius:20px;">✓ Verified</div>
+        <div style="background:var(--accent-bg);color:var(--accent);font-size:.78rem;font-weight:600;padding:4px 12px;border-radius:20px;">${t('trusted_verified')}</div>
       </div>
       ${groupsHTML}
     </div>`;
 }
 
-/* ── Keyboard shortcut ────────────────────────────────────────── */
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyzeText();
+  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') analyzeText();
 });
+
+currentLang = localStorage.getItem('tl_lang') || 'en';
+applyLang();
 </script>
 </body>
 </html>

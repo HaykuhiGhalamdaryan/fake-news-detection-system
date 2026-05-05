@@ -1,25 +1,5 @@
 # scheduler.py
 
-"""Credibility pipeline scheduler.
-
-Runs all three credibility modules on a fixed schedule using APScheduler.
-Add this to main.py startup to enable automatic credibility updates.
-
-Schedule (configurable below):
-    Module 1 — external_sync   : every 24 hours  (external API is rate-limited)
-    Module 2 — feedback_engine : every  6 hours  (reacts to new article analyses)
-    Module 3 — citation_graph  : every 12 hours  (citation graph is slower to change)
-
-Usage
------
-    # In main.py, add:
-    from app.services.scheduler import start_scheduler
-    start_scheduler()
-
-    # Or run standalone for testing:
-    python -m app.services.scheduler
-"""
-
 from __future__ import annotations
 
 import logging
@@ -36,10 +16,6 @@ logger = logging.getLogger(__name__)
 
 _scheduler: BackgroundScheduler | None = None
 
-
-# ---------------------------------------------------------------------------
-# Job wrappers — each opens its own DB session
-# ---------------------------------------------------------------------------
 
 def _job_external_sync():
     logger.info("[Scheduler] Running external_sync")
@@ -83,21 +59,7 @@ def _job_citation_graph():
         db.close()
 
 
-# ---------------------------------------------------------------------------
-# Scheduler setup
-# ---------------------------------------------------------------------------
-
 def start_scheduler():
-    """
-    Start the background scheduler. Call once at application startup.
-
-    Add to main.py:
-        from app.services.scheduler import start_scheduler
-
-        @app.on_event("startup")
-        def startup_event():
-            start_scheduler()
-    """
     global _scheduler
 
     if _scheduler is not None and _scheduler.running:
@@ -106,16 +68,14 @@ def start_scheduler():
 
     _scheduler = BackgroundScheduler()
 
-    # Module 1 — sync external ratings every 24 hours
     _scheduler.add_job(
         _job_external_sync,
         trigger="interval",
         hours=24,
         id="external_sync",
-        next_run_time=datetime.now(),  # run immediately on startup
+        next_run_time=datetime.now(),  
     )
 
-    # Module 2 — feedback engine every 6 hours
     _scheduler.add_job(
         _job_feedback_engine,
         trigger="interval",
@@ -123,7 +83,6 @@ def start_scheduler():
         id="feedback_engine",
     )
 
-    # Module 3 — citation graph every 12 hours
     _scheduler.add_job(
         _job_citation_graph,
         trigger="interval",
@@ -139,16 +98,11 @@ def start_scheduler():
 
 
 def stop_scheduler():
-    """Gracefully stop the scheduler. Call at application shutdown."""
     global _scheduler
     if _scheduler and _scheduler.running:
         _scheduler.shutdown(wait=False)
         logger.info("Credibility scheduler stopped")
 
-
-# ---------------------------------------------------------------------------
-# Run standalone for testing
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import time

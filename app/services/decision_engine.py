@@ -1,19 +1,5 @@
 # decision_engine.py
 
-"""Hybrid verdict engine.
-
-Since sentence transformers cannot understand negation, contradiction is
-now detected via explicit geographic/entity mismatch rules in
-fact_check_service.py. The verdict_hint is therefore reliable:
-
-  SUPPORTED    → evidence clearly about same entity, high similarity
-  CONTRADICTED → geo mismatch OR evidence about different entity
-  UNKNOWN      → insufficient or ambiguous evidence
-
-This makes Track A purely hint-driven, which is much more reliable
-than threshold-based net_support_score comparisons.
-"""
-
 from __future__ import annotations
 
 
@@ -111,10 +97,6 @@ def classify_model_confidence(fake_score: float) -> str:
 
 
 def generate_verdict(fake_score: float, credibility_score: int) -> str:
-    """Legacy two-signal verdict — NOT used by the analyze router.
-    
-    Kept for reference only. Use generate_hybrid_verdict() for all new code.
-    """
     if fake_score < 0.40 and credibility_score > 70:
         return "True"
     elif fake_score < 0.60:

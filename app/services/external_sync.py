@@ -1,26 +1,5 @@
 # external_sync.py
 
-"""External API sync service — Module 1.
-
-Fetches credibility ratings from external fact-checking APIs and updates
-the static source database. In production, this would call real APIs such
-as Media Bias/Fact Check or NewsGuard.
-
-This module uses a mock API that returns realistic data for demonstration.
-To integrate a real API, replace _fetch_from_mock_api() with the real call.
-
-Designed to run as a scheduled task (e.g. daily via APScheduler or cron).
-
-Usage
------
-    # Run once manually
-    python -m app.services.external_sync
-
-    # Or call from scheduler
-    from app.services.external_sync import run_sync
-    run_sync(db)
-"""
-
 from __future__ import annotations
 
 import logging
@@ -32,11 +11,6 @@ from app.database.models import ExternalRating
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Mock API data
-# Simulates what a real API like Media Bias/Fact Check would return.
-# Each entry: domain -> {credibility, category, bias, notes, source}
-# ---------------------------------------------------------------------------
 
 _MOCK_API_DATA: dict[str, dict] = {
     # Wire services
@@ -78,30 +52,10 @@ _MOCK_API_DATA: dict[str, dict] = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Mock API fetch
-# In production: replace this with a real HTTP call to MBFC / NewsGuard API
-# ---------------------------------------------------------------------------
-
 def _fetch_from_mock_api() -> dict[str, dict]:
-    """
-    Simulate fetching credibility data from an external API.
-
-    Production replacement example (Media Bias/Fact Check):
-        response = requests.get(
-            "https://api.mediabiasfactcheck.com/v1/sources",
-            headers={"Authorization": f"Bearer {API_KEY}"},
-            timeout=10,
-        )
-        return response.json()
-    """
     logger.info("Fetching data from mock external API (%d entries)", len(_MOCK_API_DATA))
     return _MOCK_API_DATA
 
-
-# ---------------------------------------------------------------------------
-# Sync logic
-# ---------------------------------------------------------------------------
 
 def run_sync(db: Session) -> dict:
     """
@@ -123,7 +77,6 @@ def run_sync(db: Session) -> dict:
         ).first()
 
         if existing is None:
-            # New domain — insert
             db.add(ExternalRating(
                 domain      = domain,
                 credibility = rating["credibility"],
@@ -137,7 +90,6 @@ def run_sync(db: Session) -> dict:
             logger.debug("Inserted: %s (credibility=%d)", domain, rating["credibility"])
 
         elif existing.credibility != rating["credibility"]:
-            # Score changed — update
             old_score = existing.credibility
             existing.credibility = rating["credibility"]
             existing.category    = rating["category"]
@@ -167,10 +119,6 @@ def run_sync(db: Session) -> dict:
                 inserted, updated, unchanged)
     return summary
 
-
-# ---------------------------------------------------------------------------
-# Run manually
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

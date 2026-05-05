@@ -1,12 +1,5 @@
 # trusted_sources.py
 
-"""Trusted Sources router.
-
-Endpoints:
-    GET /trusted-sources          — returns all sources with credibility >= min_credibility
-    GET /trusted-sources/suggest  — returns trusted sources relevant to a given verdict
-"""
-
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
@@ -17,7 +10,6 @@ from app.database.models import ExternalRating
 
 router = APIRouter()
 
-# Category icons for UI display
 _CATEGORY_ICONS = {
     "mainstream":  "📰",
     "tabloid":     "🗞️",
@@ -27,11 +19,10 @@ _CATEGORY_ICONS = {
     "unknown":     "🔍",
 }
 
-# Curated category groupings for the Trusted Sources page
 _CATEGORY_GROUPS = {
     "News":         ["mainstream"],
-    "Fact-Checking": [],           # matched by domain keyword below
-    "Science":      [],            # matched by domain keyword below
+    "Fact-Checking": [],           
+    "Science":      [],            
 }
 
 _FACT_CHECK_DOMAINS = {
@@ -73,14 +64,7 @@ def get_trusted_sources(
     category: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    """
-    Return all sources with credibility >= min_credibility.
-    Optionally filter by category (mainstream, tabloid, etc.).
-
-    Query params:
-        min_credibility : int  — minimum credibility score (default 70)
-        category        : str  — filter by category (optional)
-    """
+   
     query = db.query(ExternalRating).filter(
         ExternalRating.credibility >= min_credibility
     )
@@ -92,7 +76,6 @@ def get_trusted_sources(
 
     enriched = [_enrich(r) for r in results]
 
-    # Group by category group
     groups: dict[str, list] = {}
     for item in enriched:
         g = item["group"]
@@ -113,19 +96,12 @@ def suggest_trusted_sources(
     limit:   int = Query(default=3, ge=1, le=10),
     db: Session = Depends(get_db),
 ):
-    """
-    Suggest trusted sources when a fake/uncertain verdict is detected.
-    Only returns suggestions for Fake, Likely Fake, and Uncertain verdicts.
-
-    Returns top mainstream sources + at least one fact-checker.
-    For scientific claims, scientific domains are included.
-    """
+   
     SUGGEST_FOR = {"Fake", "Likely Fake", "Uncertain"}
 
     if verdict not in SUGGEST_FOR:
         return {"suggest": False, "sources": []}
 
-    # Top mainstream sources
     mainstream = (
         db.query(ExternalRating)
         .filter(
@@ -137,7 +113,6 @@ def suggest_trusted_sources(
         .all()
     )
 
-    # Always include at least one fact-checker
     fact_checkers = (
         db.query(ExternalRating)
         .filter(ExternalRating.domain.in_(list(_FACT_CHECK_DOMAINS)))
@@ -146,7 +121,6 @@ def suggest_trusted_sources(
         .all()
     )
 
-    # Always include at least one scientific source
     science_sources = (
         db.query(ExternalRating)
         .filter(ExternalRating.domain.in_(list(_SCIENCE_DOMAINS)))
@@ -155,7 +129,6 @@ def suggest_trusted_sources(
         .all()
     )
 
-    # Merge — domain as key prevents duplicates, priority: mainstream → fact-check → science
     combined: dict[str, ExternalRating] = {r.domain: r for r in mainstream}
     for r in fact_checkers:
         combined[r.domain] = combined.get(r.domain) or r

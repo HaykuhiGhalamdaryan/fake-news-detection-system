@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from app.database.db import get_db
 from app.database.models import AnalysisResult
-from app.models.schemas import AnalyzeRequest, AnalyzeResponse, AnalyzeURLRequest
+from app.models.schemas import AnalyzeRequest, AnalyzeResponse, AnalyzeURLRequest, TranslationInfo
 from app.services.credibility import calculate_credibility
 from app.services.decision_engine import classify_model_confidence, generate_hybrid_verdict
 from app.services.emotion_detector import detect_patterns
@@ -16,6 +16,7 @@ from app.services.nlp_service import analyze_text
 from app.services.risk_engine import classify_risk
 from app.services.text_chunker import analyze_with_chunking
 from app.services.text_features import analyze_text_features, get_manipulation_score_contribution
+from app.services.translation_service import maybe_translate
 from app.services.verdict_engine import compute_risk_score, generate_signals
 from app.services.source_analyzer import analyze_source
 from app.services.url_extractor import extract_text_from_url, is_homepage_url
@@ -24,14 +25,6 @@ router = APIRouter()
 
 
 def _extract_domain(text: str, source_url: str | None = None) -> str | None:
-    """
-    Extract the source domain for an analysis record.
-
-    Priority:
-    1. source_url — passed explicitly by analyze_url (most reliable)
-    2. First token of text — fallback for cases where a URL was prepended
-    Returns None for plain-text submissions that have no source URL.
-    """
     url = source_url or (text.split()[0] if text.strip() else "")
     if url.startswith("http"):
         try:
@@ -46,45 +39,30 @@ def _extract_domain(text: str, source_url: str | None = None) -> str | None:
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
+    translation_result = maybe_translate(request.text)
+    analysis_text      = translation_result["text"]   
+    was_translated     = translation_result["was_translated"]
+    original_lang      = translation_result["original_lang"]
+    translation_error  = translation_result["translation_error"]
 
-    # ------------------------------------------------------------------
-    # 1. Core NLP
-    # ------------------------------------------------------------------
-    nlp_result = analyze_with_chunking(request.text, analyze_text)
+    nlp_result       = analyze_with_chunking(analysis_text, analyze_text)
     fake_probability = float(nlp_result["fake_score"])
 
-    # ------------------------------------------------------------------
-    # 2. Text feature analysis
-    # ------------------------------------------------------------------
-    text_features      = analyze_text_features(request.text)
-    manipulation_score = text_features["manipulation_score"]
-
-    # NOTE: manipulation blending happens AFTER fact-checking so the
-    # blended score uses the full picture. manipulation_contribution is
-    # computed once here and reused — not double-counted in credibility.
+    text_features         = analyze_text_features(analysis_text)
+    manipulation_score    = text_features["manipulation_score"]
     manipulation_contribution = get_manipulation_score_contribution(manipulation_score)
 
-    # ------------------------------------------------------------------
-    # 3. Fact checking
-    # ------------------------------------------------------------------
-    claim_text = " ".join(request.text.split()[:500])
+    claim_text        = " ".join(analysis_text.split()[:500])
     fact_check_result = fact_check_claim(claim_text)
 
     support_score     = float(fact_check_result.get("support_score", 0.0))
     net_support_score = float(fact_check_result.get("net_support_score", support_score))
     verdict_hint      = fact_check_result.get("verdict_hint", "UNKNOWN")
 
-    # Blend manipulation after fact-check so all signals are available.
-    # 85% ML ensemble + 15% manipulation nudge — applied once here only.
-    # credibility.py receives raw manipulation_score separately so there
-    # is no double-counting.
     fake_probability = round(
         0.85 * fake_probability + 0.15 * manipulation_contribution, 4
     )
 
-    # ------------------------------------------------------------------
-    # 4. Credibility score
-    # ------------------------------------------------------------------
     credibility_score = calculate_credibility(
         fake_score=fake_probability,
         sentiment_score=nlp_result["sentiment_score"],
@@ -93,9 +71,6 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
         verdict_hint=verdict_hint,
     )
 
-    # ------------------------------------------------------------------
-    # 5. Emotion / manipulation pattern detection
-    # ------------------------------------------------------------------
     emotion_analysis = detect_patterns(request.text)
 
     for sig in text_features["signals"]:
@@ -107,8 +82,6 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
 
     emotional_words_detected = len(emotion_analysis["detected_patterns"]) > 0
 
-    # Count only genuinely emotional/manipulation signals for risk scoring —
-    # structural signals like TITLE_CASE_ABUSE should not trigger +15 penalty
     _EMOTIONAL_SIGNAL_TAGS = {
         "EMOTIONAL_LANGUAGE", "CLICKBAIT_LANGUAGE",
         "HYPERBOLIC_LANGUAGE", "VAGUE_ATTRIBUTION",
@@ -118,9 +91,6 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
         if s in _EMOTIONAL_SIGNAL_TAGS
     )
 
-    # ------------------------------------------------------------------
-    # 6. Verdict
-    # ------------------------------------------------------------------
     verdict = generate_hybrid_verdict(
         fake_score=fake_probability,
         support_score=support_score,
@@ -135,9 +105,6 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
     fake_confidence  = int(fake_probability * 100)
     model_confidence = classify_model_confidence(fake_probability)
 
-    # ------------------------------------------------------------------
-    # 7. Signals
-    # ------------------------------------------------------------------
     signals = generate_signals(
         fake_probability=fake_probability,
         credibility_score=credibility_score,
@@ -150,9 +117,6 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
     if emotion_analysis["detected_patterns"] and "MANIPULATIVE_LANGUAGE" not in signals:
         signals.append("MANIPULATIVE_LANGUAGE")
 
-    # ------------------------------------------------------------------
-    # 8. Explanation
-    # ------------------------------------------------------------------
     explanation = generate_explanation(
         fake_score=fake_probability,
         sentiment=nlp_result["sentiment"],
@@ -162,9 +126,6 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
         verdict=verdict,
     )
 
-    # ------------------------------------------------------------------
-    # 9. Risk scoring
-    # ------------------------------------------------------------------
     risk_score = compute_risk_score(
         fake_probability,
         support_score,
@@ -174,17 +135,9 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
 
     risk_level = classify_risk(risk_score)
 
-    # ------------------------------------------------------------------
-    # Verdict ↔ Risk consistency
-    # Prevent contradictory UI states like verdict="True" + risk="HIGH"
-    # or verdict="Fake" + risk="LOW".
-    # The verdict is the authoritative signal — risk level is aligned to it.
-    # ------------------------------------------------------------------
     if verdict in ("True", "Likely True"):
-        # Credible content cannot be HIGH risk
         if risk_level == "HIGH":
             risk_level = "MEDIUM"
-        # Strong fact-check support → LOW
         if (
             verdict == "True"
             or (verdict == "Likely True" and net_support_score >= 0.25)
@@ -192,16 +145,11 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
             risk_level = "LOW"
 
     elif verdict in ("Fake", "Likely Fake"):
-        # Fake content is always at least MEDIUM risk
         if risk_level == "LOW":
             risk_level = "MEDIUM"
-        # Strongly fake → HIGH
         if verdict == "Fake" or fake_probability >= 0.70:
             risk_level = "HIGH"
 
-    # ------------------------------------------------------------------
-    # 10. Persist to database
-    # ------------------------------------------------------------------
     db_record = AnalysisResult(
         text=request.text,
         source_domain=_extract_domain(request.text, request.source_url),
@@ -217,9 +165,6 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_record)
 
-    # ------------------------------------------------------------------
-    # 11. Response
-    # ------------------------------------------------------------------
     return {
         "verdict":          verdict,
         "confidence":       fake_confidence,
@@ -254,39 +199,36 @@ def analyze_claim(request: AnalyzeRequest, db: Session = Depends(get_db)):
         "risk_level":      risk_level,
         "article_warning": None,
         "source_analysis": None,
+        "translation": TranslationInfo(
+            was_translated=was_translated,
+            original_lang=original_lang,
+            translation_error=translation_error,
+        ) if (was_translated or original_lang != "en") else None,
     }
 
 
-# ---------------------------------------------------------------------------
-# URL analysis endpoint
-# ---------------------------------------------------------------------------
-
 @router.post("/analyze-url")
 def analyze_url(request: AnalyzeURLRequest, db: Session = Depends(get_db)):
-    """
-    Two modes depending on what URL is submitted:
-
-    1. HOMEPAGE / SOURCE URL  (e.g. https://bbc.com  or  https://bbc.com/news)
-       Skips NLP pipeline entirely.
-       Returns: { "mode": "source_only", "source_analysis": { ... } }
-
-    2. ARTICLE URL  (e.g. https://bbc.com/news/articles/xyz)
-       Extracts article text and runs full analysis pipeline.
-       Returns: full AnalyzeResponse + source_analysis attached.
-    """
-
-    # ── Detect homepage vs article URL (before fetching) ─────────────────
+    
     if is_homepage_url(request.url):
         source_analysis = analyze_source(request.url, db)
+
+        if not source_analysis.get("known_source"):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "This URL does not appear to be a news article or a known news source. "
+                    "Please submit a direct link to a specific news article."
+                )
+            )
+
         return {
             "mode":            "source_only",
             "source_analysis": source_analysis,
         }
 
-    # ── Article mode: fetch and extract text ──────────────────────────────
     result = extract_text_from_url(request.url)
 
-    # Genuine network / HTTP failure — nothing fetched
     if not result["success"] and not result.get("text"):
         raise HTTPException(
             status_code=422,
@@ -296,7 +238,19 @@ def analyze_url(request: AnalyzeURLRequest, db: Session = Depends(get_db)):
     text       = result.get("text", "")
     word_count = result.get("word_count", len(text.split()))
 
-    # Post-fetch listing detection — switch to source-only if page is a homepage
+    _MIN_WORDS = 50
+
+    if word_count < _MIN_WORDS:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Not enough article text could be extracted from this URL "
+                f"({word_count} words found, minimum {_MIN_WORDS} required). "
+                "Please make sure it is a direct link to a news article — "
+                "not a homepage, video, social media page, or paywalled content."
+            )
+        )
+
     if result.get("is_likely_listing") and word_count < 100:
         source_analysis = analyze_source(request.url, db)
         return {
@@ -304,18 +258,16 @@ def analyze_url(request: AnalyzeURLRequest, db: Session = Depends(get_db)):
             "source_analysis": source_analysis,
         }
 
-    # Build article warning for pages with little text
     article_warning = None
     if result.get("listing_warning"):
         article_warning = result["listing_warning"]
     elif word_count < 150:
         article_warning = (
             "Very little text was extracted from this page. "
-            "It may be a homepage, paywalled, or blocking scrapers. "
+            "It may be paywalled or blocking scrapers. "
             "Try a direct article URL instead."
         )
 
-    # Prepend title so the model sees it as the opening claim
     if result.get("title"):
         text = result["title"] + ". " + text
 
@@ -325,14 +277,18 @@ def analyze_url(request: AnalyzeURLRequest, db: Session = Depends(get_db)):
             detail="Could not extract any text from this URL."
         )
 
-    # Source credibility analysis (with SQL cache for unknown domains)
     source_analysis = analyze_source(request.url, db)
 
-    # Full NLP pipeline — reuse analyze_claim, passing source URL for domain tracking
-    fake_req = AnalyzeRequest(text=text, source_url=request.url)
-    response = analyze_claim(fake_req, db)
+    fake_req     = AnalyzeRequest(text=text, source_url=request.url)
+    raw_response = analyze_claim(fake_req, db)
 
-    # Attach mode, warning and source analysis to response dict
+    if hasattr(raw_response, "model_dump"):
+        response = raw_response.model_dump()   
+    elif hasattr(raw_response, "dict"):
+        response = raw_response.dict()         
+    else:
+        response = dict(raw_response)
+
     response["mode"]            = "article"
     response["article_warning"] = article_warning
     response["source_analysis"] = source_analysis

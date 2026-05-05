@@ -17,19 +17,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ---------------------------------------------------------------------------
-# Logging — DEBUG in development, WARNING in production
-# Set LOG_LEVEL=DEBUG in .env for verbose output during development.
-# ---------------------------------------------------------------------------
 _LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
 logging.basicConfig(level=getattr(logging, _LOG_LEVEL, logging.WARNING))
 logger = logging.getLogger(__name__)
 
 models.Base.metadata.create_all(bind=engine)
 
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
 _ENV = os.getenv("APP_ENV", "production").lower()
 
 app = FastAPI(
@@ -38,11 +31,6 @@ app = FastAPI(
     version="1.0",
 )
 
-# ---------------------------------------------------------------------------
-# CORS — restrict to configured origins in production
-# Set ALLOWED_ORIGINS=https://yourdomain.com in .env for production.
-# Defaults to "*" only in development mode.
-# ---------------------------------------------------------------------------
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "")
 _allow_origins = (
     [o.strip() for o in _raw_origins.split(",") if o.strip()]
@@ -52,16 +40,11 @@ _allow_origins = (
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_allow_origins or ["*"],   # fallback for local dev
+    allow_origins=_allow_origins or ["*"],   
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------------------------
-# Global error handler
-# In production: return a safe generic message (no traceback exposed).
-# In development: include traceback for easier debugging.
-# ---------------------------------------------------------------------------
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     tb = traceback.format_exc()
@@ -74,16 +57,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 
     return JSONResponse(status_code=500, content=content)
 
-# ---------------------------------------------------------------------------
-# Routers
-# ---------------------------------------------------------------------------
 app.include_router(analyze.router)
 app.include_router(health.router)
 app.include_router(history.router)
 app.include_router(analytics.router)
 app.include_router(trusted_sources.router)
 
-# Serve static files (index.html)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")

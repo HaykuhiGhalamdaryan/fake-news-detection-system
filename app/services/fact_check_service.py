@@ -13,19 +13,11 @@ from sentence_transformers import SentenceTransformer, util
 
 _model: Optional[SentenceTransformer] = None
 
-# ---------------------------------------------------------------------------
-# Source credibility weights
-# Normalised to 0.0–1.0 from the _SOURCE_DB scores in source_analyzer.py.
-# A sentence from Reuters (0.95) beats an equal sentence from an unknown
-# source (0.50 default) in the weighted scoring.
-# ---------------------------------------------------------------------------
 
 _SOURCE_CREDIBILITY: dict[str, float] = {
     "wikipedia.org": 0.85,
     "duckduckgo.com": 0.70,
-    # NewsAPI aggregates many outlets — mid-range default
     "newsapi.org":   0.70,
-    # Per-outlet overrides used when NewsAPI returns a known domain
     "reuters.com":   0.95,
     "apnews.com":    0.95,
     "bbc.com":       0.92,
@@ -46,19 +38,13 @@ _SOURCE_CREDIBILITY: dict[str, float] = {
     "rt.com":        0.20,
 }
 
-_DEFAULT_SOURCE_WEIGHT = 0.65  # unknown source gets a modest weight
+_DEFAULT_SOURCE_WEIGHT = 0.65  
 
 
 def _source_weight(source_label: str) -> float:
     """Return a credibility weight (0–1) for a named source."""
     return _SOURCE_CREDIBILITY.get(source_label.lower(), _DEFAULT_SOURCE_WEIGHT)
 
-
-# ---------------------------------------------------------------------------
-# Negation flip helpers
-# Instead of bailing out to UNKNOWN, we strip the negation from the claim,
-# search for the affirmative version, and invert the result at the end.
-# ---------------------------------------------------------------------------
 
 _NEGATION_FLIP_PAIRS = [
     (re.compile(r"\bisn'?t\b",    re.I), "is"),
@@ -81,15 +67,8 @@ _NEGATION_FLIP_PAIRS = [
 
 
 def _flip_negation(claim: str) -> str:
-    """
-    Return an affirmative version of a negated claim.
-    Applies the first matching negation pattern and stops.
-    E.g. "The Earth is not flat" -> "The Earth is flat"
-         "Paris isn't the capital" -> "Paris is the capital"
-    """
     for pattern, replacement in _NEGATION_FLIP_PAIRS:
         flipped = pattern.sub(replacement, claim, count=1).strip()
-        # Clean up double spaces left by removing "not"/"never"
         flipped = re.sub(r" {2,}", " ", flipped)
         if flipped != claim:
             return flipped
@@ -255,23 +234,6 @@ def _entity_overlap(claim: str, evidence: str) -> float:
 
 
 def _topic_relevance(claim: str, evidence: str) -> float:
-    """
-    Fraction of claim's KEY CONTENT WORDS that appear in the evidence.
-
-    This checks whether the evidence is actually about the same topic
-    as the claim — not just whether it mentions the same person/entity.
-
-    Example:
-      claim    = "Napoleon was very short, standing under 5 feet tall"
-      keywords = ["napoleon", "short", "feet", "tall", "standing"]
-      evidence = "David managed to persuade him to sit for a portrait in 1798"
-      → none of the topic keywords appear → topic_relevance = 0.0 → NOT relevant
-
-      claim    = "Yerevan is the capital of Armenia"
-      keywords = ["yerevan", "capital", "armenia"]
-      evidence = "Yerevan is the capital and largest city of Armenia"
-      → all keywords appear → topic_relevance = 1.0 → relevant ✅
-    """
     claim_lower    = claim.lower()
     evidence_lower = evidence.lower()
 
@@ -287,17 +249,6 @@ def _topic_relevance(claim: str, evidence: str) -> float:
 
 def _best_match(claim_emb, sentences: list[str], model,
                 source_weight: float = 1.0) -> tuple[float, str]:
-    """
-    Return the (weighted_score, sentence) pair with the highest
-    credibility-adjusted similarity.
-
-    weighted_score = cosine_similarity * source_weight
-
-    source_weight is the normalised credibility of the source that
-    provided these sentences (0.0–1.0).  A sentence from Reuters
-    (weight 0.95) will beat an equal sentence from an unknown site
-    (weight 0.65) after weighting.
-    """
     best_score, best_sentence = 0.0, ""
     for s in sentences:
         try:
@@ -316,13 +267,6 @@ def fact_check_claim(claim: str) -> dict:
     model        = _get_model()
     has_negation = _claim_has_negation(claim)
 
-    # ------------------------------------------------------------------
-    # Improvement 1 — Negation flip
-    # If the claim is negated ("The Earth is not flat"), we search for
-    # the affirmative version ("The Earth is flat") so the embedding
-    # model can find matching evidence.  We track this and invert the
-    # verdict_hint at the end: SUPPORTED → CONTRADICTED and vice versa.
-    # ------------------------------------------------------------------
     if has_negation:
         search_claim = _flip_negation(claim)
         negation_inverted = True
@@ -351,14 +295,6 @@ def fact_check_claim(claim: str) -> dict:
         wiki_sents, wiki_titles = f_wiki.result()
         ddg_sents               = f_ddg.result()
 
-    # ------------------------------------------------------------------
-    # Improvement 2 — Source credibility weighting
-    # Each source gets a weight derived from its known credibility score.
-    # A sentence from Wikipedia (0.85) beats an equally similar sentence
-    # from an unknown aggregator (0.65) after the weight is applied.
-    # The raw similarity is still stored as support_score so downstream
-    # logic is not distorted — only the winner selection uses weighting.
-    # ------------------------------------------------------------------
     news_wscore, news_sent = _best_match(
         search_emb, news_sents, model,
         source_weight=_source_weight("newsapi.org")
@@ -379,7 +315,6 @@ def fact_check_claim(claim: str) -> dict:
     ]
     best_wscore, best_sentence, best_source = max(results, key=lambda x: x[0])
 
-    # Recover the raw (unweighted) similarity for support_score reporting
     best_weight = _source_weight(
         "newsapi.org"    if best_source == "NewsAPI"    else
         "wikipedia.org"  if best_source == "Wikipedia"  else
@@ -394,7 +329,6 @@ def fact_check_claim(claim: str) -> dict:
     contradiction_score = min(geo_penalty + entity_penalty, 0.60)
     net_support      = round(best_score - contradiction_score, 4)
 
-    # Determine verdict_hint for the affirmative search_claim
     if best_score < 0.25:
         verdict_hint = "UNKNOWN"
 
@@ -425,13 +359,6 @@ def fact_check_claim(claim: str) -> dict:
     else:
         verdict_hint = "UNKNOWN"
 
-    # ------------------------------------------------------------------
-    # Invert verdict for negated claims
-    # We searched the affirmative version, so if the affirmative is
-    # SUPPORTED, the original negated claim is actually CONTRADICTED,
-    # and if the affirmative is CONTRADICTED, the original is SUPPORTED.
-    # UNKNOWN stays UNKNOWN — we still couldn't find relevant evidence.
-    # ------------------------------------------------------------------
     if negation_inverted:
         if verdict_hint == "SUPPORTED":
             verdict_hint = "CONTRADICTED"

@@ -12,3 +12,5 @@ matplotlib
 seaborn
 python-dotenv
 apscheduler
+langdetect
+sentencepiece

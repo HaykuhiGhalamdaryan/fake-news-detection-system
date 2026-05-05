@@ -43,11 +43,7 @@ class DomainCache(Base):
     notes           = Column(Text,    nullable=False, default="")
     warning         = Column(Text,    nullable=False, default="")
     cached_at       = Column(DateTime, default=datetime.utcnow)
-
-
-# ---------------------------------------------------------------------------
-# New tables for the three credibility modules
-# ---------------------------------------------------------------------------
+    
 
 class ExternalRating(Base):
     """

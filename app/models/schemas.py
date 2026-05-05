@@ -53,12 +53,19 @@ class SourceAnalysis(BaseModel):
     warning: str
 
 
+class TranslationInfo(BaseModel):
+    """Present when input was non-English and translation was attempted."""
+    was_translated: bool
+    original_lang: str
+    translation_error: str = ""
+
+
 class SourceOnlyResponse(BaseModel):
     """
     Returned when a news source homepage is submitted (not a specific article).
     Contains only source analysis — no NLP pipeline is run.
     """
-    mode: str = "source_only"      # always "source_only" — frontend uses this to detect
+    mode: str = "source_only"
     source_analysis: SourceAnalysis
 
 
@@ -76,3 +83,4 @@ class AnalyzeResponse(BaseModel):
     explanation: Explanation
     article_warning: Optional[str] = None
     source_analysis: Optional[SourceAnalysis] = None
+    translation: Optional[TranslationInfo] = None

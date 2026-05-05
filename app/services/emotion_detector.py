@@ -1,12 +1,5 @@
 # emotion_detector.py
 
-"""Emotion and manipulation pattern detector.
-
-Uses regex patterns (not simple substring match) so that variations like
-"government is hiding", "hiding the truth", "they are hiding" all match
-the same underlying manipulation signal.
-"""
-
 from __future__ import annotations
 
 import re
@@ -40,16 +33,6 @@ EMOTIONAL_WORDS = [
 
 
 def detect_patterns(text: str) -> dict:
-    """
-    Detect manipulation phrases using regex and classify tone.
-
-    Returns
-    -------
-    {
-        "tone"              : "emotional" | "neutral"
-        "detected_patterns" : list of matched display names (deduplicated)
-    }
-    """
     text_lower = text.lower()
     found = []
     seen = set()
@@ -70,7 +53,6 @@ def detect_patterns(text: str) -> dict:
 
 
 def detect_emotional_language(text: str) -> list[str]:
-    """Return emotional trigger words detected in the input text."""
     detected = []
     text_lower = text.lower()
     seen = set()
